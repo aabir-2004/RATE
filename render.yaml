@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: rate-python-backend
+    env: docker
+    dockerfilePath: Dockerfile.api
+    plan: free
+    healthCheckPath: /
+    envVars:
+      - key: PORT
+        value: 8000
