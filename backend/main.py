@@ -14,6 +14,26 @@ app = FastAPI(
     version="2.0",
 )
 
+from starlette.middleware.base import BaseHTTPMiddleware
+from fastapi.responses import Response
+
+class PrivateNetworkAccessMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        if request.method == "OPTIONS" and "access-control-request-private-network" in request.headers:
+            response = Response()
+            response.headers["Access-Control-Allow-Private-Network"] = "true"
+            response.headers["Access-Control-Allow-Origin"] = request.headers.get("origin", "*")
+            response.headers["Access-Control-Allow-Methods"] = "*"
+            response.headers["Access-Control-Allow-Headers"] = "*"
+            return response
+        
+        response = await call_next(request)
+        if "origin" in request.headers:
+            response.headers["Access-Control-Allow-Private-Network"] = "true"
+        return response
+
+app.add_middleware(PrivateNetworkAccessMiddleware)
+
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
