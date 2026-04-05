@@ -1,0 +1,7 @@
+**/venv/
+**/node_modules/
+**/__pycache__/
+**/.next/
+uploads/
+.git/
+rate_app.db

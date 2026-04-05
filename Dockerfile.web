@@ -1,0 +1,19 @@
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Import the Next.js specification files
+COPY web/package*.json ./
+
+# Install interface dependencies
+RUN npm install
+
+# Copy application logic
+COPY web/ ./
+
+# Build Vercel-ready assets locally
+RUN npm run build
+
+EXPOSE 3000
+
+CMD ["npm", "start"]

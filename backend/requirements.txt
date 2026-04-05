@@ -1,0 +1,14 @@
+fastapi
+uvicorn
+sqlalchemy
+pydantic
+pandas
+scikit-learn
+numpy
+matplotlib
+seaborn
+python-multipart
+gymnasium
+stable-baselines3
+scipy
+torch

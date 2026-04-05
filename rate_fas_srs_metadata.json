@@ -1,0 +1,542 @@
+{
+  "document": {
+    "title": "R.A.T.E. — Reinforcement-based Assessment of Target Elements: Factor Assessment System (FAS)",
+    "subtitle": "A Framework for Evaluating Influential Variables in Predictive Models",
+    "version": "2.0",
+    "status": "Final Detailed SRS",
+    "date": "2026-04-03",
+    "source": "Prepared from uploaded project presentation"
+  },
+
+  "project": {
+    "full_name": "R.A.T.E. / Factor Assessment System (FAS)",
+    "acronym_breakdown": {
+      "R.A.T.E.": "Reinforcement-based Assessment of Target Elements",
+      "FAS": "Factor Assessment System"
+    },
+    "type": "Data Analytics and Factor Intelligence Platform",
+    "purpose": "To identify, rank, analyze, and interpret the most influential factors in predictive models across multiple domains. Sits between raw datasets and predictive model building — not only predicting outcomes but explaining prediction inputs through systematic factor assessment.",
+    "primary_domains": [
+      "Transportation",
+      "Education / Student Performance",
+      "Agriculture",
+      "Environmental Analytics"
+    ],
+    "representative_use_cases": [
+      "Railway delay prediction",
+      "Flight arrival prediction",
+      "Student academic performance forecasting",
+      "Agricultural yield prediction"
+    ]
+  },
+
+  "background_and_motivation": {
+    "core_problem": "Predictive systems depend heavily on the quality and relevance of input factors. Identifying truly influential variables is difficult but essential in predictive analytics.",
+    "consequences_of_poor_factor_selection": [
+      "Reduced prediction accuracy",
+      "Increased computational cost",
+      "Harder model interpretability"
+    ],
+    "solution_approach": "A systematic factor assessment framework using statistical, ML, and reinforcement-oriented methods."
+  },
+
+  "objectives": [
+    "Analyze datasets from different predictive domains and detect relevant influencing variables.",
+    "Rank factors using statistical and ML techniques: correlation analysis, regression analysis, feature importance, decision trees, and random forest ranking.",
+    "Introduce reinforcement-oriented mechanisms for error-sensitive refinement and novelty-case review.",
+    "Improve prediction quality, model transparency, and decision support through better factor selection and interpretation.",
+    "Generate visual and exportable outputs for academic, research, and analytical use."
+  ],
+
+  "intended_audience": [
+    "Student developers implementing the system",
+    "Faculty mentors and academic evaluators",
+    "Testers verifying compliance with requirements",
+    "Analysts or researchers using the platform for factor assessment",
+    "Future contributors extending the project"
+  ],
+
+  "glossary": {
+    "SRS": "Software Requirements Specification",
+    "R.A.T.E.": "Reinforcement-based Assessment of Target Elements",
+    "FAS": "Factor Assessment System",
+    "ML": "Machine Learning",
+    "RL": "Reinforcement Learning / Reinforcement-oriented logic in this project context",
+    "Feature_Factor": "An input variable influencing model predictions",
+    "MSE": "Mean Squared Error",
+    "RMSE": "Root Mean Square Error",
+    "Novelty_Case": "An unusual or previously unseen case requiring manual reinforcement or review",
+    "Factor_Ranking": "Ordering features based on their contribution to prediction outcomes"
+  },
+
+  "references": [
+    "Bishop — Pattern Recognition and Machine Learning",
+    "James et al. — An Introduction to Statistical Learning",
+    "Breiman — Random Forests (paper)",
+    "Kaggle Datasets",
+    "UCI Machine Learning Repository"
+  ],
+
+  "architecture": {
+    "style": "Layered Modular Architecture",
+    "layers": [
+      "Presentation Layer",
+      "Application / Business Logic Layer",
+      "Data and Model Layer",
+      "Reporting and Visualization Layer"
+    ],
+    "modules": {
+      "dataset_management": {
+        "id": "MOD-01",
+        "name": "Dataset Management Module",
+        "responsibilities": [
+          "Dataset upload",
+          "Storage",
+          "Validation",
+          "Metadata extraction",
+          "Versioning",
+          "Retrieval"
+        ]
+      },
+      "preprocessing": {
+        "id": "MOD-02",
+        "name": "Preprocessing Module",
+        "responsibilities": [
+          "Data cleaning",
+          "Missing-value handling",
+          "Normalization",
+          "Transformation",
+          "Feature encoding",
+          "Preprocessing audit logs"
+        ]
+      },
+      "feature_identification": {
+        "id": "MOD-03",
+        "name": "Feature Identification Module",
+        "responsibilities": [
+          "Candidate feature detection",
+          "Target variable selection",
+          "Domain mapping",
+          "Manual feature inclusion/exclusion"
+        ]
+      },
+      "factor_assessment": {
+        "id": "MOD-04",
+        "name": "Factor Assessment Module",
+        "responsibilities": [
+          "Feature ranking via correlation analysis",
+          "Regression analysis",
+          "ML-based importance scoring",
+          "Tree-based ranking methods"
+        ]
+      },
+      "reinforcement_error_handling": {
+        "id": "MOD-05",
+        "name": "Reinforcement / Error Handling Module",
+        "responsibilities": [
+          "Reinforcement-oriented refinement",
+          "Error-sensitive re-evaluation",
+          "Novelty-case workflow support"
+        ],
+        "maps_to_presentation_concepts": [
+          "Reinforcement Against Errors",
+          "Manual Reinforcement for Novelty Cases"
+        ]
+      },
+      "predictive_evaluation": {
+        "id": "MOD-06",
+        "name": "Predictive Evaluation Module",
+        "responsibilities": [
+          "Training predictive models",
+          "Comparing baseline vs selected-factor models",
+          "Computing evaluation metrics: accuracy, MSE, RMSE, precision, recall"
+        ]
+      },
+      "visualization": {
+        "id": "MOD-07",
+        "name": "Visualization Module",
+        "responsibilities": [
+          "Feature-importance plots",
+          "Correlation heatmaps",
+          "Comparative performance charts"
+        ]
+      },
+      "reporting": {
+        "id": "MOD-08",
+        "name": "Reporting Module",
+        "responsibilities": [
+          "Analysis summaries",
+          "Downloadable results",
+          "Experiment logs",
+          "Final reports"
+        ]
+      }
+    }
+  },
+
+  "user_classes": [
+    {
+      "role": "Administrator",
+      "description": "Maintains the platform, users, configurations, logs, and storage.",
+      "permissions": "Full access"
+    },
+    {
+      "role": "Analyst",
+      "description": "Uploads datasets, configures analysis, runs factor evaluation, views results.",
+      "permissions": "Analysis and export"
+    },
+    {
+      "role": "Research User",
+      "description": "Performs experimental runs, compares algorithms, studies novelty cases.",
+      "permissions": "Advanced analytics"
+    },
+    {
+      "role": "Reviewer / Faculty",
+      "description": "Views outputs, reports, model results, and interpretation dashboards.",
+      "permissions": "Read-only or limited review"
+    }
+  ],
+
+  "operating_environment": {
+    "supported_os": ["Windows", "Linux"],
+    "programming_language": "Python",
+    "backend_frameworks": ["Flask", "FastAPI", "Django"],
+    "frontend_ui_options": ["Streamlit", "Flask templates", "React"],
+    "data_libraries": ["pandas", "NumPy"],
+    "ml_libraries": ["scikit-learn", "PyTorch (optional)", "TensorFlow (optional, for RL extensions)"],
+    "visualization_libraries": ["matplotlib", "seaborn", "Plotly"],
+    "storage_options": ["Local file system", "SQLite", "PostgreSQL"],
+    "browser_support": "Modern browsers (if deployed as web app)",
+    "hardware": "Standard academic laptops or desktops — no dedicated hardware required for v1"
+  },
+
+  "assumptions_and_dependencies": [
+    "Suitable datasets will be available from Kaggle, UCI, or similar repositories.",
+    "Users will know the target variable relevant to their prediction task.",
+    "Libraries required for preprocessing, analysis, and modeling will be installed.",
+    "The project will initially operate on structured tabular datasets.",
+    "Domain examples in the presentation are representative and may be extended later."
+  ],
+
+  "design_and_implementation_constraints": [
+    "The system depends on the availability and quality of external datasets from open repositories or government sources.",
+    "Different domains will produce heterogeneous data structures requiring flexible preprocessing.",
+    "The RL component is conceptually present in the project title and methodology but the exact RL algorithm is not fully defined — implementation must refine it carefully.",
+    "The system should remain understandable to academic evaluators and must not become an over-complex black box."
+  ],
+
+  "external_interfaces": {
+    "user_interface": {
+      "screens": [
+        "Login screen",
+        "Dashboard screen",
+        "Dataset upload screen",
+        "Dataset preview and validation screen",
+        "Preprocessing configuration screen",
+        "Feature identification screen",
+        "Factor ranking results screen",
+        "Model evaluation screen",
+        "Novelty case review screen",
+        "Visualization screen",
+        "Report export screen"
+      ],
+      "design_rules": [
+        "Workflow order must map to methodology: data collection → preprocessing → feature identification → factor assessment → model evaluation → visualization.",
+        "Interface shall support tables, filters, plots, and model-result panels.",
+        "Interface shall visually distinguish raw features, selected factors, rejected factors, and novelty alerts.",
+        "Interface should support academic demonstration with simple navigation."
+      ]
+    },
+    "hardware_interfaces": "No dedicated hardware required for v1. Runs on standard laptops/desktops.",
+    "software_interfaces": [
+      "CSV and Excel files",
+      "Optional database sources",
+      "ML libraries for regression, tree models, and feature importance",
+      "Visualization libraries for plotting outputs",
+      "Optional RL or rule-based modules for reinforcement/error refinement"
+    ],
+    "communication_interfaces": "HTTP/HTTPS for web deployment. REST-style JSON exchange if external dataset APIs are used."
+  },
+
+  "functional_requirements": {
+    "user_management": [
+      { "id": "FR-1", "description": "The system shall support secure login for registered users." },
+      { "id": "FR-2", "description": "The system shall provide role-based access control for administrators, analysts, researchers, and reviewers." },
+      { "id": "FR-3", "description": "The system shall store user activity logs for important actions such as upload, analysis execution, novelty review, and report generation." }
+    ],
+    "dataset_upload_and_management": [
+      { "id": "FR-4", "description": "The system shall allow users to upload datasets in CSV and Excel formats." },
+      { "id": "FR-5", "description": "The system shall allow users to label the domain of the dataset as transportation, academic, agriculture, environmental, or custom." },
+      { "id": "FR-6", "description": "The system shall validate file structure and reject corrupted or unsupported datasets." },
+      { "id": "FR-7", "description": "The system shall display a dataset preview after upload." },
+      { "id": "FR-8", "description": "The system shall store dataset metadata: file name, upload time, size, number of rows, number of columns, and selected target variable." }
+    ],
+    "data_preprocessing": [
+      { "id": "FR-9", "description": "The system shall support data cleaning operations including duplicate removal and invalid record handling." },
+      { "id": "FR-10", "description": "The system shall detect missing values and provide configurable strategies for handling them." },
+      { "id": "FR-11", "description": "The system shall support normalization of numerical data." },
+      { "id": "FR-12", "description": "The system shall support feature encoding for categorical variables." },
+      { "id": "FR-13", "description": "The system shall provide a preprocessing summary report showing the transformations applied." },
+      { "id": "FR-14", "description": "The system shall allow users to rerun preprocessing with modified settings." }
+    ],
+    "feature_identification": [
+      { "id": "FR-15", "description": "The system shall allow the user to define the prediction target variable." },
+      { "id": "FR-16", "description": "The system shall list all candidate input features." },
+      { "id": "FR-17", "description": "The system shall allow manual inclusion or exclusion of selected factors." },
+      { "id": "FR-18", "description": "The system shall support domain-specific example factor templates: weather, traffic congestion, operational delays, attendance, study hours, previous grades, rainfall, soil quality, and temperature." },
+      { "id": "FR-19", "description": "The system shall maintain the selected feature set for each experiment run." }
+    ],
+    "factor_assessment": [
+      { "id": "FR-20", "description": "The system shall perform correlation analysis for feature relevance estimation." },
+      { "id": "FR-21", "description": "The system shall perform regression-based analysis when applicable." },
+      { "id": "FR-22", "description": "The system shall compute feature importance using machine learning models." },
+      { "id": "FR-23", "description": "The system shall support decision tree and random forest based feature ranking." },
+      { "id": "FR-24", "description": "The system shall rank features in descending order of importance." },
+      { "id": "FR-25", "description": "The system shall display factor scores, rank positions, and analysis method used." },
+      { "id": "FR-26", "description": "The system shall support comparison of rankings generated by multiple methods." }
+    ],
+    "reinforcement_oriented_error_assessment": [
+      { "id": "FR-27", "description": "The system shall include a reinforcement-oriented component for error-sensitive refinement, corresponding to 'Reinforcement Against Errors' in the project presentation." },
+      { "id": "FR-28", "description": "The system shall track model errors or low-confidence outcomes and use them to trigger reassessment of selected factors." },
+      { "id": "FR-29", "description": "The system shall allow configurable reward or penalty logic, or equivalent rule-based scoring, to guide refinement of selected features." },
+      { "id": "FR-30", "description": "The system shall store each reassessment cycle as part of experiment history." },
+      { "id": "FR-31", "description": "The system should support future replacement of the rule-based refinement engine with a true RL agent if not implemented in the first release." }
+    ],
+    "model_training_and_evaluation": [
+      { "id": "FR-32", "description": "The system shall train predictive models using the selected features." },
+      { "id": "FR-33", "description": "The system shall allow comparison between full-feature models and selected-factor models." },
+      { "id": "FR-34", "description": "The system shall compute metrics such as accuracy, MSE, RMSE, precision, and recall depending on the prediction problem." },
+      { "id": "FR-35", "description": "The system shall store metric history for each experiment run." },
+      { "id": "FR-36", "description": "The system shall identify the best-performing feature set based on user-selected evaluation criteria." }
+    ],
+    "novelty_case_handling": [
+      { "id": "FR-37", "description": "The system shall detect or flag potential novelty cases, outliers, or uncertain patterns during evaluation." },
+      { "id": "FR-38", "description": "The system shall allow manual reinforcement for novelty cases as mentioned in the presentation." },
+      { "id": "FR-39", "description": "The system shall allow a reviewer to annotate novelty cases with comments and decisions." },
+      { "id": "FR-40", "description": "The system shall preserve novelty-case decisions for future comparison and improvement cycles." }
+    ],
+    "visualization_and_interpretation": [
+      { "id": "FR-41", "description": "The system shall generate feature-importance graphs." },
+      { "id": "FR-42", "description": "The system shall generate correlation heatmaps." },
+      { "id": "FR-43", "description": "The system shall generate comparative performance charts." },
+      { "id": "FR-44", "description": "The system shall provide visual comparison of multiple factor assessment methods." },
+      { "id": "FR-45", "description": "The system shall support export of plots in image or report-friendly formats." }
+    ],
+    "reporting_and_export": [
+      { "id": "FR-46", "description": "The system shall generate downloadable reports summarizing dataset details, preprocessing actions, selected features, factor scores, model metrics, and visual outputs." },
+      { "id": "FR-47", "description": "The system shall allow export of ranked factor tables in CSV or Excel format." },
+      { "id": "FR-48", "description": "The system shall store past reports and analysis sessions for later viewing." }
+    ]
+  },
+
+  "non_functional_requirements": {
+    "performance": [
+      { "id": "NFR-1", "description": "The system should process typical academic-scale tabular datasets within acceptable time on standard hardware." },
+      { "id": "NFR-2", "description": "Feature ranking and model evaluation should complete within a practical duration suitable for interactive use." },
+      { "id": "NFR-3", "description": "Visualization generation should not block the user interface for excessive time." }
+    ],
+    "reliability": [
+      { "id": "NFR-4", "description": "The system shall not lose uploaded datasets or experiment metadata during normal operation." },
+      { "id": "NFR-5", "description": "The system shall handle invalid input gracefully and provide meaningful error messages." },
+      { "id": "NFR-6", "description": "The system shall preserve experiment history across application restarts if persistent storage is used." }
+    ],
+    "usability": [
+      { "id": "NFR-7", "description": "The interface shall be understandable to users with basic knowledge of machine learning." },
+      { "id": "NFR-8", "description": "The workflow shall clearly map to the methodology in the presentation so users can follow the project logic easily." },
+      { "id": "NFR-9", "description": "Output charts and reports shall be readable and suitable for academic presentation." }
+    ],
+    "security": [
+      { "id": "NFR-10", "description": "User authentication data shall be securely stored." },
+      { "id": "NFR-11", "description": "Only authorized users shall access analysis history and uploaded datasets." },
+      { "id": "NFR-12", "description": "If deployed online, secure communication shall be enabled." }
+    ],
+    "maintainability": [
+      { "id": "NFR-13", "description": "The software shall use modular design so preprocessing, ranking, evaluation, and visualization components can be modified independently." },
+      { "id": "NFR-14", "description": "The codebase shall be documented sufficiently for student team maintenance." },
+      { "id": "NFR-15", "description": "Configuration-driven design should be used where possible for thresholds, selected algorithms, and novelty rules." }
+    ],
+    "scalability": [
+      { "id": "NFR-16", "description": "The system should support new prediction domains beyond those listed in the presentation." },
+      { "id": "NFR-17", "description": "The system should support future integration of deeper RL methods and explainability modules." }
+    ],
+    "portability": [
+      { "id": "NFR-18", "description": "The system should run on Windows and Linux." },
+      { "id": "NFR-19", "description": "If implemented as a web app, it should run on modern browsers." }
+    ]
+  },
+
+  "data_requirements": {
+    "input_data_structure": {
+      "required_components": [
+        "Feature columns",
+        "Target/output column",
+        "Optional domain-specific attributes",
+        "Sufficient records for model training and evaluation"
+      ]
+    },
+    "sample_domain_factors": [
+      {
+        "domain": "Transportation",
+        "example_factors": ["Weather conditions", "Traffic congestion", "Operational delays"],
+        "example_outcome": "Delay or arrival prediction"
+      },
+      {
+        "domain": "Student Performance",
+        "example_factors": ["Attendance", "Study hours", "Previous grades"],
+        "example_outcome": "Academic outcome prediction"
+      },
+      {
+        "domain": "Agriculture",
+        "example_factors": ["Rainfall", "Soil quality", "Temperature"],
+        "example_outcome": "Yield prediction"
+      },
+      {
+        "domain": "Environmental Analytics",
+        "example_factors": ["Climate or pollution related inputs"],
+        "example_outcome": "Environmental prediction task"
+      }
+    ],
+    "output_data_types": [
+      "Cleaned datasets",
+      "Preprocessing logs",
+      "Factor ranking tables",
+      "Model evaluation summaries",
+      "Novelty case records",
+      "Visualization artifacts",
+      "Exported reports"
+    ]
+  },
+
+  "use_cases": {
+    "UC-01": {
+      "name": "Perform Factor Assessment",
+      "actor": "Analyst",
+      "preconditions": "User is logged in and has a valid dataset.",
+      "main_flow": [
+        "User uploads dataset.",
+        "User previews and validates data.",
+        "User applies preprocessing.",
+        "User selects target variable.",
+        "User chooses factor assessment methods.",
+        "System computes factor importance.",
+        "System ranks factors.",
+        "User views graphs and results.",
+        "User exports report."
+      ],
+      "postconditions": "Results are saved and accessible from history."
+    },
+    "UC-02": {
+      "name": "Evaluate Selected Features",
+      "actor": "Research User",
+      "preconditions": "Factor assessment has been completed.",
+      "main_flow": [
+        "User selects factor subset.",
+        "System trains predictive model.",
+        "System computes evaluation metrics.",
+        "System compares model results with baseline.",
+        "User reviews top-performing factors."
+      ],
+      "postconditions": "Evaluation metrics and comparison results stored."
+    },
+    "UC-03": {
+      "name": "Review Novelty Case",
+      "actor": "Analyst / Reviewer",
+      "preconditions": "A novelty case has been flagged by the system.",
+      "main_flow": [
+        "System flags unusual case.",
+        "User opens novelty review panel.",
+        "User inspects factor ranking and model behavior.",
+        "User adds comment or corrective action.",
+        "System stores review outcome."
+      ],
+      "postconditions": "Novelty case decision preserved for future improvement cycles."
+    }
+  },
+
+  "database_schema": {
+    "note": "Suggested logical schema for relational storage.",
+    "tables": {
+      "Users": {
+        "fields": ["user_id", "name", "email", "role", "password_hash", "created_at"]
+      },
+      "Projects": {
+        "fields": ["project_id", "title", "description", "owner_id", "created_at"]
+      },
+      "Datasets": {
+        "fields": ["dataset_id", "project_id", "file_name", "domain", "rows", "columns", "uploaded_at"]
+      },
+      "PreprocessingRuns": {
+        "fields": ["run_id", "dataset_id", "operations", "timestamp"]
+      },
+      "FeatureSelections": {
+        "fields": ["selection_id", "run_id", "target_variable", "selected_features"]
+      },
+      "FactorAssessments": {
+        "fields": ["assessment_id", "selection_id", "method", "results_json", "timestamp"]
+      },
+      "ModelRuns": {
+        "fields": ["model_run_id", "assessment_id", "algorithm", "metrics_json", "timestamp"]
+      },
+      "NoveltyCases": {
+        "fields": ["case_id", "model_run_id", "reason", "reviewer_notes", "action_taken", "timestamp"]
+      },
+      "Reports": {
+        "fields": ["report_id", "project_id", "file_path", "generated_at"]
+      }
+    }
+  },
+
+  "business_rules": [
+    "The user must select exactly one target variable per experiment.",
+    "A dataset must pass validation before preprocessing can begin.",
+    "Factor ranking cannot execute until preprocessing and target selection are complete.",
+    "Model evaluation cannot execute until at least one factor assessment result exists.",
+    "Novelty-case review is mandatory for any case flagged as critical by system rules."
+  ],
+
+  "error_handling_requirements": [
+    "The system shall notify users about unsupported file formats.",
+    "The system shall notify users when the target variable is missing or invalid.",
+    "The system shall notify users when preprocessing fails.",
+    "The system shall notify users when a model cannot be trained due to insufficient data.",
+    "The system shall preserve logs for debugging failed experiment runs."
+  ],
+
+  "validation_and_acceptance_criteria": [
+    "System supports dataset upload and preprocessing for at least one dataset from the proposed domains.",
+    "System can identify candidate features and compute factor rankings using at least two methods from the presentation.",
+    "System trains a predictive model and computes at least the required evaluation metrics relevant to the task.",
+    "System supports novelty-case review and stores reviewer decisions.",
+    "System generates visualizations including feature-importance graphs, heatmaps, and comparative charts.",
+    "System exports a readable report summarizing the full analysis workflow."
+  ],
+
+  "risks_and_limitations": [
+    "Real-world datasets may be noisy, incomplete, or inconsistent across domains.",
+    "Different ranking algorithms may disagree on factor importance.",
+    "Reinforcement-oriented logic may need careful simplification for a first academic implementation — the presentation names the concept but does not fully specify its algorithm.",
+    "Novelty detection quality will depend on threshold design and reviewer consistency.",
+    "Multi-domain generalization may be limited in early versions."
+  ],
+
+  "future_enhancements": [
+    "Add a fully defined RL agent for adaptive factor selection.",
+    "Add SHAP/LIME based explainability.",
+    "Add automated API-based dataset import.",
+    "Add experiment comparison dashboards.",
+    "Add multi-user annotations and collaborative review.",
+    "Add domain-specific templates for transportation, education, and agriculture.",
+    "Add model recommendation based on dataset type."
+  ],
+
+  "requirement_traceability_matrix": [
+    { "presentation_element": "Multi-domain predictive applications", "srs_coverage": ["Scope", "FR-4", "FR-5", "FR-6", "FR-7", "FR-8", "Data Requirements"] },
+    { "presentation_element": "Preprocessing pipeline", "srs_coverage": ["FR-9", "FR-10", "FR-11", "FR-12", "FR-13", "FR-14"] },
+    { "presentation_element": "Feature identification examples", "srs_coverage": ["FR-15", "FR-16", "FR-17", "FR-18", "FR-19"] },
+    { "presentation_element": "Correlation, regression, random forest, feature ranking", "srs_coverage": ["FR-20", "FR-21", "FR-22", "FR-23", "FR-24", "FR-25", "FR-26"] },
+    { "presentation_element": "Reinforcement Against Errors", "srs_coverage": ["FR-27", "FR-28", "FR-29", "FR-30", "FR-31"] },
+    { "presentation_element": "Accuracy, MSE, RMSE, precision, recall", "srs_coverage": ["FR-32", "FR-33", "FR-34", "FR-35", "FR-36"] },
+    { "presentation_element": "Manual Reinforcement for Novelty Cases", "srs_coverage": ["FR-37", "FR-38", "FR-39", "FR-40"] },
+    { "presentation_element": "Feature graphs, heatmaps, performance charts", "srs_coverage": ["FR-41", "FR-42", "FR-43", "FR-44", "FR-45"] }
+  ]
+}
