@@ -10,6 +10,7 @@ export default function Home() {
     // API States
     const [datasetId, setDatasetId] = useState<number | null>(null);
     const [runId, setRunId] = useState<number | null>(null);
+    const [availableColumns, setAvailableColumns] = useState<string[]>([]);
     
     // UI Feedback
     const [uploadAlert, setUploadAlert] = useState<{msg: string, type: string} | null>(null);
@@ -93,7 +94,9 @@ export default function Home() {
 
             setDatasetId(data.dataset_id);
             setRunId(data.dataset_id); 
-            setUploadAlert({ msg: `Successfully uploaded Dataset #${data.dataset_id} natively!`, type: 'alert-success' });
+            if (data.columns_list) setAvailableColumns(data.columns_list);
+            
+            setUploadAlert({ msg: `Successfully uploaded Dataset #${data.dataset_id}! Columns initialized.`, type: 'alert-success' });
         } catch (error: any) {
             setUploadAlert({ msg: error.message, type: 'alert-error' });
         }
@@ -102,8 +105,8 @@ export default function Home() {
     const triggerAssessment = async (e: React.FormEvent) => {
         e.preventDefault();
         const form = e.target as HTMLFormElement;
-        const targetVar = (form.elements.namedItem('targetVar') as HTMLInputElement).value;
-        const features = (form.elements.namedItem('features') as HTMLInputElement).value.split(',');
+        const targetVar = (form.elements.namedItem('targetVar') as HTMLInputElement | HTMLSelectElement).value;
+        const features = availableColumns.length > 0 ? availableColumns.filter(c => c !== targetVar) : ['Auto_Detect'];
         const method = (form.elements.namedItem('method') as HTMLSelectElement).value;
 
         setAnalysisAlert({ msg: 'Routing algorithm to Vercel/Python backend...', type: 'alert-success' });
@@ -218,18 +221,25 @@ export default function Home() {
                         <form onSubmit={triggerAssessment}>
                             <div className="form-group">
                                 <label>Target Variable Parameter</label>
-                                <input type="text" name="targetVar" className="form-control" defaultValue="Passed_Course" />
+                                {availableColumns.length > 0 ? (
+                                    <select name="targetVar" className="form-control">
+                                        {availableColumns.map(col => <option value={col} key={col}>{col}</option>)}
+                                    </select>
+                                ) : (
+                                    <input type="text" name="targetVar" className="form-control" placeholder="Please upload data first..." />
+                                )}
+                            </div>
+                            <div className="form-group" style={{ paddingBottom: '10px' }}>
+                                <label>Features Evaluated</label>
+                                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                                    R.A.T.E. Reinforcement Learning actively scans all {availableColumns.length ? availableColumns.length - 1 : 'available'} metadata parameters.
+                                </div>
                             </div>
                             <div className="form-group">
-                                <label>Available Features (comma separated)</label>
-                                <input type="text" name="features" className="form-control" defaultValue="Attendance_Rate,Hours_Studied,Sleep_Hours" />
-                            </div>
-                            <div className="form-group">
-                                <label>Assessment Method</label>
+                                <label>Assessment Core Algorithm</label>
                                 <select name="method" className="form-control">
-                                    <option value="anova">ANOVA test (Statistical)</option>
-                                    <option value="random_forest">Random Forest (Tree-based)</option>
-                                    <option value="reinforcement_learning">Deep RL PPO (Advanced)</option>
+                                    <option value="reinforcement_learning">RATE Deep RL (Fused with ANOVA Metadata)</option>
+                                    <option value="random_forest">Baseline Check (Random Forest)</option>
                                 </select>
                             </div>
                             <button type="submit" className="btn-primary">Trigger Serverless Assessment</button>

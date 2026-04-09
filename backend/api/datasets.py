@@ -47,7 +47,9 @@ async def upload_dataset(
     file_path = f"uploads/{db_dataset.dataset_id}_dataset.csv"
     df.to_csv(file_path, index=False)
     
-    return db_dataset
+    response_data = schemas.DatasetResponse.model_validate(db_dataset).model_dump()
+    response_data["columns_list"] = df.columns.tolist()
+    return response_data
 
 @router.get("/project/{project_id}", response_model=List[schemas.DatasetResponse])
 def get_datasets_by_project(project_id: int, db: Session = Depends(get_db)):

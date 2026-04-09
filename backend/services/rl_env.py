@@ -8,29 +8,27 @@ from sklearn.model_selection import cross_val_score
 class FeatureSelectionEnv(gym.Env):
     """
     Custom Environment for Feature Selection using Reinforcement Learning.
-    The agent learns to select a subset of features that maximizes predictive performance
-    while minimizing the number of features.
+    The agent learns to select a subset of features that maximizes predictive performance.
+    It now incorporates ANOVA metadata directly into its observation space.
     """
     metadata = {'render.modes': ['console']}
 
-    def __init__(self, X: pd.DataFrame, y: pd.Series, is_classification: bool):
+    def __init__(self, X: pd.DataFrame, y: pd.Series, is_classification: bool, anova_metadata: np.ndarray):
         super(FeatureSelectionEnv, self).__init__()
         
         self.X = X
         self.y = y
         self.is_classification = is_classification
         self.n_features = X.shape[1]
+        self.anova_metadata = anova_metadata.astype(np.float32)
         
-        # Action space: Two actions for each feature (1: select, 0: unselect)
-        # We can formulate action space as MultiBinary to select/deselect multiple at once
-        # or as Discrete to toggle one feature at a time.
-        # Discrete is often easier for simple RL agents to explore effectively.
+        # Action space: Discrete to toggle one feature at a time.
         self.action_space = spaces.Discrete(self.n_features)
         
-        # Observation space: Binary vector of current feature selection state
-        self.observation_space = spaces.MultiBinary(self.n_features)
+        # Observation space: Concatenation of current binary selection AND ANOVA continuous metadata
+        self.observation_space = spaces.Box(low=0.0, high=1.0, shape=(self.n_features * 2,), dtype=np.float32)
         
-        self.state = np.zeros(self.n_features, dtype=np.int8)
+        self.state = np.zeros(self.n_features, dtype=np.float32)
         self.current_step = 0
         self.max_steps = self.n_features * 2
         
@@ -40,30 +38,31 @@ class FeatureSelectionEnv(gym.Env):
 
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
-        # Start with all features unselected (or randomly selected)
-        self.state = np.zeros(self.n_features, dtype=np.int8)
+        self.state = np.zeros(self.n_features, dtype=np.float32)
         # Select at least one random feature to avoid evaluating empty set initially
         initial_feature = np.random.randint(self.n_features)
-        self.state[initial_feature] = 1
+        self.state[initial_feature] = 1.0
         
         self.current_step = 0
         self.best_score = -float('inf')
-        return self.state, {}
+        
+        obs = np.concatenate([self.state, self.anova_metadata])
+        return obs, {}
 
     def step(self, action):
         self.current_step += 1
         
         # Toggle the feature selection
-        self.state[action] = 1 - self.state[action]
+        self.state[action] = 1.0 - self.state[action]
         
         # If no features are selected, penalize heavily and randomly pick one
         if np.sum(self.state) == 0:
             reward = -1.0
-            self.state[np.random.randint(self.n_features)] = 1
+            self.state[np.random.randint(self.n_features)] = 1.0
             score = 0.0
         else:
             # Evaluate current feature subset
-            selected_features_idx = np.where(self.state == 1)[0]
+            selected_features_idx = np.where(self.state == 1.0)[0]
             X_subset = self.X.iloc[:, selected_features_idx]
             
             # Use cross-validation for robust fast scoring
@@ -88,7 +87,8 @@ class FeatureSelectionEnv(gym.Env):
         terminated = self.current_step >= self.max_steps
         truncated = False
         
-        return self.state, reward, terminated, truncated, {"score": score}
+        obs = np.concatenate([self.state, self.anova_metadata])
+        return obs, reward, terminated, truncated, {"score": score}
 
     def render(self, mode='console'):
         if mode == 'console':
@@ -96,19 +96,30 @@ class FeatureSelectionEnv(gym.Env):
 
 def run_rl_feature_selection(df: pd.DataFrame, target_col: str, total_timesteps=2000):
     from stable_baselines3 import PPO
+    from sklearn.feature_selection import f_classif, f_regression
     
     X = df.drop(columns=[target_col])
     y = df[target_col]
     is_classification = df[target_col].nunique() < 20
     
-    env = FeatureSelectionEnv(X, y, is_classification)
+    # 1. ANOVA Pre-Processing (Metadata of data layer)
+    if is_classification:
+        f_values, _ = f_classif(X, y)
+    else:
+        f_values, _ = f_regression(X, y)
+        
+    f_values = np.nan_to_num(f_values)
+    # Normalize between 0 and 1 so RL network handles it cleanly
+    f_max = np.max(f_values) if np.max(f_values) > 0 else 1.0
+    anova_metadata = f_values / f_max
     
-    # Using PPO architecture suitable for MultiBinary observation
+    env = FeatureSelectionEnv(X, y, is_classification, anova_metadata)
+    
+    # Using PPO architecture suitable for continuous Box observation spaces
     model = PPO("MlpPolicy", env, verbose=0, n_steps=64, batch_size=32)
     model.learn(total_timesteps=total_timesteps)
     
     # Evaluate the learned policy to get feature importance
-    # Run an episode following policy, sum up selections
     obs, info = env.reset()
     feature_counts = np.zeros(X.shape[1])
     
@@ -116,8 +127,8 @@ def run_rl_feature_selection(df: pd.DataFrame, target_col: str, total_timesteps=
     for _ in range(50): 
         action, _states = model.predict(obs, deterministic=True)
         obs, reward, terminated, truncated, info = env.step(action)
-        # Which features are active?
-        feature_counts += obs
+        # Which features are active? (The first n_features of obs hold the binary state)
+        feature_counts += obs[:X.shape[1]]
         if terminated or truncated:
             obs, info = env.reset()
             

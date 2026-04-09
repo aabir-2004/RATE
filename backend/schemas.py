@@ -46,6 +46,7 @@ class DatasetResponse(DatasetBase, ORMModel):
     dataset_id: int
     project_id: int
     uploaded_at: datetime
+    columns_list: Optional[List[str]] = None
 
 # --- Preprocessing Schemas ---
 class PreprocessingOptions(BaseModel):
