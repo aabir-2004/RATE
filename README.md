@@ -1,3 +1,4 @@
+![Uploading Screenshot 2026-04-10 at 10.50.58 AM.png…]()
 # RATE
 #### **This website is a RL-Based advanced dataset factor assessment tool, that allows user to assess any data using complicated pipelines that are a combination of RL**
 
