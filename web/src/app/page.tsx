@@ -83,7 +83,7 @@ export default function Home() {
 
         setUploadAlert({ msg: 'Uploading safely to Python worker...', type: 'alert-success' });
         try {
-            const pythonWorkerUrl = process.env.NEXT_PUBLIC_PYTHON_WORKER_URL || 'http://127.0.0.1:8000';
+            const pythonWorkerUrl = process.env.NEXT_PUBLIC_PYTHON_WORKER_URL || 'https://fatty04-rate.hf.space';
             const res = await fetch(`${pythonWorkerUrl}/datasets/`, {
                 method: 'POST',
                 body: formData

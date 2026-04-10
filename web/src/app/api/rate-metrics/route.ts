@@ -34,7 +34,7 @@ export async function POST(req: Request) {
 
     // 2. ROUTE TO FASTAPI (PYTHON ML WORKER)
     // In production, replace localhost with your Render, AWS, or Railway URL
-    const pythonWorkerUrl = process.env.PYTHON_WORKER_URL || process.env.NEXT_PUBLIC_PYTHON_WORKER_URL || 'http://127.0.0.1:8000';
+    const pythonWorkerUrl = process.env.PYTHON_WORKER_URL || process.env.NEXT_PUBLIC_PYTHON_WORKER_URL || 'https://fatty04-rate.hf.space';
     
     // Step A: Run Preprocessing
     const preprocessRes = await fetch(`${pythonWorkerUrl}/preprocessing/`, {
