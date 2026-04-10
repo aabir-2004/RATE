@@ -77,7 +77,11 @@ class FeatureSelectionEnv(gym.Env):
             # Reward shaping: Increase in performance + penalty for number of features (sparsity)
             sparsity_penalty = 0.01 * np.sum(self.state)
             
-            if score > self.best_score:
+            if self.best_score == -float('inf'):
+                # Initial evaluation step shouldn't yield infinite reward
+                reward = 1.0 - sparsity_penalty
+                self.best_score = score
+            elif score > self.best_score:
                 reward = (score - self.best_score) * 10 - sparsity_penalty
                 self.best_score = score
             else:

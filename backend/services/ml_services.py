@@ -92,7 +92,8 @@ def assess_factors(df: pd.DataFrame, target_col: str, method: str) -> dict:
             
     elif method == "reinforcement_learning":
         # Launch the Deep RL PPO agent to identify optimal feature subset
-        results = run_rl_feature_selection(df, target_col, total_timesteps=3000)
+        # Timesteps optimized to 250 to comply with Vercel's 10s serverless timeout constraint
+        results = run_rl_feature_selection(df, target_col, total_timesteps=250)
             
     return {"method": method, "rankings": results}
 
