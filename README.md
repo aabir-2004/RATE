@@ -1,8 +1,9 @@
-![Uploading Screenshot 2026-04-10 at 10.50.58 AM.png…]()
 # RATE
 #### **This website is a RL-Based advanced dataset factor assessment tool, that allows user to assess any data using complicated pipelines that are a combination of RL**
 
 R.A.T.E. (Reinforcement-based Assessment of Target Elements), also referred to as the Factor Assessment System (FAS), is a data analytics platform designed to identify, evaluate, and rank the most influential factors in predictive models. Unlike conventional systems that focus only on generating predictions, this platform emphasizes understanding which input variables drive those predictions and how they contribute to outcomes. It acts as an intermediate layer between raw datasets and machine learning models, improving both model performance and interpretability.
+
+<img width="1075" height="360" alt="Screenshot 2026-04-10 at 10 51 54 AM" src="https://github.com/user-attachments/assets/71420bc2-bd24-4b68-b32e-e5e7c164aca4" />
 
 The system supports a structured workflow that begins with dataset upload and validation, followed by preprocessing steps such as data cleaning, normalization, and encoding. Users can then define a target variable and identify relevant features. The platform applies multiple analytical techniques including correlation analysis, regression methods, and machine learning-based feature importance to rank factors. It further incorporates a reinforcement-oriented mechanism that refines feature selection based on model errors and low-confidence predictions, enabling iterative improvement of results.
 
