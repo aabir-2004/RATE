@@ -103,10 +103,9 @@ All services communicate over an isolated internal network, allowing consistent 
 
 ---
 
-## Limitations
+## Live Link
 
-The system currently assumes structured tabular datasets. Performance may degrade with very high-dimensional feature spaces due to RL training cost. ANOVA is used as a primary statistical filter and may not capture complex non-linear relationships.
-
+https://rate-theta-ruby.vercel.app/
 ---
 
 ## License
