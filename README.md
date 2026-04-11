@@ -1,18 +1,116 @@
-# RATE
-#### **This website is a RL-Based advanced dataset factor assessment tool, that allows user to assess any data using complicated pipelines that are a combination of RL**
+# R.A.T.E — Reinforced Analytical Target Engine
 
-R.A.T.E. (Reinforcement-based Assessment of Target Elements), also referred to as the Factor Assessment System (FAS), is a data analytics platform designed to identify, evaluate, and rank the most influential factors in predictive models. Unlike conventional systems that focus only on generating predictions, this platform emphasizes understanding which input variables drive those predictions and how they contribute to outcomes. It acts as an intermediate layer between raw datasets and machine learning models, improving both model performance and interpretability.
+R.A.T.E is a deterministic system for automated feature selection and dataset evaluation. It integrates structured LLM outputs with statistical validation and reinforcement learning to produce reproducible and verifiable analytical results.
 
-<img width="1075" height="360" alt="Screenshot 2026-04-10 at 10 51 54 AM" src="https://github.com/user-attachments/assets/71420bc2-bd24-4b68-b32e-e5e7c164aca4" />
+The system is designed to address a common failure mode in AI-assisted data pipelines: the use of non-deterministic or unverified feature logic. R.A.T.E enforces a strict boundary between structural inference and mathematical execution, ensuring that all computations are grounded in validated data.
 
-The system supports a structured workflow that begins with dataset upload and validation, followed by preprocessing steps such as data cleaning, normalization, and encoding. Users can then define a target variable and identify relevant features. The platform applies multiple analytical techniques including correlation analysis, regression methods, and machine learning-based feature importance to rank factors. It further incorporates a reinforcement-oriented mechanism that refines feature selection based on model errors and low-confidence predictions, enabling iterative improvement of results.
+---
 
-R.A.T.E. is designed to work across multiple domains such as transportation, education, agriculture, and environmental analytics. It supports use cases like delay prediction, student performance analysis, and yield forecasting. The system includes visualization capabilities such as feature importance graphs and correlation heatmaps, along with reporting features that allow users to export results and maintain experiment history.
+## System Overview
 
-Built using Python-based frameworks and standard data science libraries, the platform is modular, extensible, and suitable for academic as well as practical applications. It runs on standard computing environments without requiring specialized hardware. While the initial version focuses on structured datasets and rule-based reinforcement logic, future enhancements aim to incorporate advanced reinforcement learning techniques, explainability models, and broader domain support.
+At a high level, the pipeline converts raw tabular data into an optimized feature subset through a sequence of constrained transformations. Each stage is designed to eliminate ambiguity before passing control to the next.
 
-At its core, the system is intended to improve predictive modeling not just by increasing accuracy, but by making the decision-making process transparent, measurable, and adaptable.
+Dataset → Metadata Extraction → LLM Structuring  
+→ Schema Validation → ANOVA Processing  
+→ RL Optimization (PPO) → Ranking Output  
+
+The LLM is used only to propose an initial structure. All subsequent stages operate on validated inputs and deterministic processes.
+
+---
+
+## Design Principles
+
+The system is built around a few core constraints:
+
+- LLMs are not allowed to perform numerical reasoning  
+- All feature references must exist in the dataset schema  
+- Every stochastic component is seeded for reproducibility  
+- Invalid inputs are removed before entering the execution pipeline  
+
+This ensures that the system behaves consistently across runs and datasets, without relying on probabilistic outputs from generative models.
+
+---
+
+## Pipeline Description
+
+### Dataset Ingestion
+
+Datasets are uploaded in fixed-size chunks and reconstructed server-side. This avoids memory spikes and allows handling of large files within constrained environments.
+
+### Metadata and LLM Structuring
+
+Only column headers are passed to the LLM. The model returns a structured JSON containing a proposed target variable and candidate features. No statistical or numerical inference is accepted at this stage.
+
+### Validation Layer
+
+The proposed schema is cross-checked against the actual dataset. Any invalid or hallucinated feature is removed before further processing. This step acts as a hard gate for pipeline integrity.
+
+### Statistical Processing (ANOVA)
+
+ANOVA is applied to compute feature relevance with respect to the target variable. The output is a set of statistically grounded signals that serve as input for the optimization stage.
+
+### Reinforcement Learning Optimization
+
+A PPO-based agent operates over a binary feature selection space. The initial state is seeded using the validated LLM output, allowing the agent to start from a structured prior rather than a random configuration.
+
+The reward function is derived from model performance (e.g., a Random Forest baseline), and the agent iteratively converges toward an optimal feature subset.
+
+### Output
+
+The system produces:
+- Ranked feature importance
+- Evaluation metrics
+- Final selected feature set
+
+---
+
+## Architecture
+
+<img width="1536" height="1024" alt="ChatGPT Image Apr 12, 2026, 01_46_53 AM" src="https://github.com/user-attachments/assets/c3b47141-b92a-4b3f-bcf2-c84df416cd05" />
 
 
-## **HERE IS THE LINK**
-https://rate-theta-ruby.vercel.app/
+The backend is implemented using FastAPI and handles all data processing and model execution. Reinforcement learning is implemented using Stable-Baselines3, with a custom environment for feature selection.
+
+The frontend is built with Next.js and provides a controlled interface for dataset upload, pipeline execution, and result visualization.
+
+A Redis layer is used for caching previously computed results, reducing redundant computation for identical inputs.
+
+---
+
+## Determinism and Reliability
+
+Reproducibility is enforced across all stages:
+
+- Fixed random seeds are applied globally  
+- LLM output is treated as input, not authority  
+- All computations occur after validation  
+- No stage depends on unverified assumptions  
+
+This ensures that identical inputs always produce identical outputs.
+
+---
+
+## Deployment
+
+The system is containerized using Docker. Separate services are defined for:
+
+- Python API  
+- Frontend (Next.js)  
+- Redis (caching)  
+- MongoDB (persistence)  
+
+All services communicate over an isolated internal network, allowing consistent deployment across environments.
+
+---
+
+## Limitations
+
+The system currently assumes structured tabular datasets. Performance may degrade with very high-dimensional feature spaces due to RL training cost. ANOVA is used as a primary statistical filter and may not capture complex non-linear relationships.
+
+---
+
+## License
+
+All rights reserved.
+
+Unauthorized copying, modification, distribution, or use of this software, in whole or in part, is strictly prohibited without prior written permission from the author.
