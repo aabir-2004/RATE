@@ -30,6 +30,19 @@ The system is built around a few core constraints:
 This ensures that the system behaves consistently across runs and datasets, without relying on probabilistic outputs from generative models.
 
 ---
+## Architecture
+
+<img width="1536" height="1024" alt="ChatGPT Image Apr 12, 2026, 01_46_53 AM" src="https://github.com/user-attachments/assets/c3b47141-b92a-4b3f-bcf2-c84df416cd05" />
+
+
+The backend is implemented using FastAPI and handles all data processing and model execution. Reinforcement learning is implemented using Stable-Baselines3, with a custom environment for feature selection.
+
+The frontend is built with Next.js and provides a controlled interface for dataset upload, pipeline execution, and result visualization.
+
+A Redis layer is used for caching previously computed results, reducing redundant computation for identical inputs.
+
+
+---
 
 ## Pipeline Description
 
@@ -61,19 +74,6 @@ The system produces:
 - Ranked feature importance
 - Evaluation metrics
 - Final selected feature set
-
----
-
-## Architecture
-
-<img width="1536" height="1024" alt="ChatGPT Image Apr 12, 2026, 01_46_53 AM" src="https://github.com/user-attachments/assets/c3b47141-b92a-4b3f-bcf2-c84df416cd05" />
-
-
-The backend is implemented using FastAPI and handles all data processing and model execution. Reinforcement learning is implemented using Stable-Baselines3, with a custom environment for feature selection.
-
-The frontend is built with Next.js and provides a controlled interface for dataset upload, pipeline execution, and result visualization.
-
-A Redis layer is used for caching previously computed results, reducing redundant computation for identical inputs.
 
 ---
 
