@@ -1,11 +1,4 @@
----
-title: RATE Worker
-emoji: 🚀
-colorFrom: blue
-colorTo: green
-sdk: docker
-pinned: false
----
+
 
 # R.A.T.E — Reinforced Analytical Target Engine
 
