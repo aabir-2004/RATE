@@ -110,7 +110,7 @@ export default function Home() {
                 setUploadProgress(progress);
                 setUploadAlert({ msg: `Streaming chunk ${index + 1}/${totalChunks} (${(file.size / 1024 / 1024).toFixed(1)} MB)...`, type: 'alert-success' });
                 
-                const res = await fetch(`${pythonWorkerUrl}/datasets/upload_chunk/`, {
+                const res = await fetch(`${pythonWorkerUrl}/datasets/upload_chunk`, {
                     method: 'POST',
                     body: formData
                 });
@@ -129,7 +129,7 @@ export default function Home() {
             finalizeData.append('project_id', '1');
             finalizeData.append('total_chunks', totalChunks.toString());
 
-            const finalRes = await fetch(`${pythonWorkerUrl}/datasets/finalize_upload/`, {
+            const finalRes = await fetch(`${pythonWorkerUrl}/datasets/finalize_upload`, {
                 method: 'POST',
                 body: finalizeData
             });
@@ -262,7 +262,7 @@ export default function Home() {
 
     const resetPipeline = () => {
         const pythonWorkerUrl = process.env.NEXT_PUBLIC_PYTHON_WORKER_URL || 'https://zeo04-rate-worker.hf.space';
-        fetch(`${pythonWorkerUrl}/datasets/purge-session/`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify([]) }).catch(() => {});
+        fetch(`${pythonWorkerUrl}/datasets/purge-session`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify([]) }).catch(() => {});
         setLlmInsight(null); setCurrentFileIndex(0); setMultiDatasets([]); 
         setDatasetId(null); setRunId(null); setAvailableColumns([]);
         setUploadAlert(null); setAnalysisAlert(null); setUploadProgress(0);

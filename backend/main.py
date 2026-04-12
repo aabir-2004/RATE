@@ -6,8 +6,14 @@ from .database import engine
 from .api import datasets, analysis, preprocessing, users, projects
 
 import os
+import shutil
+
 # Create database tables (if they don't exist)
 models.Base.metadata.create_all(bind=engine)
+
+# ── Reset Transient Storage ──
+if os.path.exists("uploads"):
+    shutil.rmtree("uploads")
 os.makedirs("uploads", exist_ok=True)
 
 app = FastAPI(
