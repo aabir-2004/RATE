@@ -13,7 +13,7 @@ class FeatureSelectionEnv(gym.Env):
     """
     metadata = {'render.modes': ['console']}
 
-    def __init__(self, X: pd.DataFrame, y: pd.Series, is_classification: bool, anova_metadata: np.ndarray):
+    def __init__(self, X: pd.DataFrame, y: pd.Series, is_classification: bool, anova_metadata: np.ndarray, initial_state: np.ndarray = None):
         super(FeatureSelectionEnv, self).__init__()
         
         self.X = X
@@ -21,6 +21,8 @@ class FeatureSelectionEnv(gym.Env):
         self.is_classification = is_classification
         self.n_features = X.shape[1]
         self.anova_metadata = anova_metadata.astype(np.float32)
+        
+        self.initial_state = initial_state if initial_state is not None else np.zeros(self.n_features, dtype=np.float32)
         
         # Action space: Discrete to toggle one feature at a time.
         self.action_space = spaces.Discrete(self.n_features)
@@ -32,16 +34,18 @@ class FeatureSelectionEnv(gym.Env):
         self.current_step = 0
         self.max_steps = self.n_features * 2
         
-        # Fast evaluator
-        self.evaluator = DecisionTreeClassifier(max_depth=5) if self.is_classification else DecisionTreeRegressor(max_depth=5)
+        # Fast evaluator with fixed seed to ensure deterministic behaviour
+        self.evaluator = DecisionTreeClassifier(max_depth=5, random_state=42) if self.is_classification else DecisionTreeRegressor(max_depth=5, random_state=42)
         self.best_score = -float('inf')
 
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
-        self.state = np.zeros(self.n_features, dtype=np.float32)
-        # Select at least one random feature to avoid evaluating empty set initially
-        initial_feature = np.random.randint(self.n_features)
-        self.state[initial_feature] = 1.0
+        self.state = np.copy(self.initial_state)
+        
+        # Select at least one random feature if state is completely empty to avoid crash
+        if np.sum(self.state) == 0:
+            initial_feature = np.random.randint(self.n_features)
+            self.state[initial_feature] = 1.0
         
         self.current_step = 0
         self.best_score = -float('inf')
@@ -98,13 +102,16 @@ class FeatureSelectionEnv(gym.Env):
         if mode == 'console':
             print(f"Step: {self.current_step}, State: {self.state}, Best Score: {self.best_score}")
 
-def run_rl_feature_selection(df: pd.DataFrame, target_col: str, total_timesteps=2000):
+def run_rl_feature_selection(df: pd.DataFrame, target_col: str, total_timesteps=2000, llm_priors: list = None):
     from stable_baselines3 import PPO
     from sklearn.feature_selection import f_classif, f_regression
     
     X = df.drop(columns=[target_col])
     y = df[target_col]
     is_classification = df[target_col].nunique() < 20
+    
+    # Enforce strict determinism
+    np.random.seed(42)
     
     # 1. ANOVA Pre-Processing (Metadata of data layer)
     if is_classification:
@@ -117,14 +124,22 @@ def run_rl_feature_selection(df: pd.DataFrame, target_col: str, total_timesteps=
     f_max = np.max(f_values) if np.max(f_values) > 0 else 1.0
     anova_metadata = f_values / f_max
     
-    env = FeatureSelectionEnv(X, y, is_classification, anova_metadata)
+    # 2. Convert LLM string features into binary prior array mapping
+    initial_state = None
+    if llm_priors:
+        initial_state = np.zeros(len(X.columns), dtype=np.float32)
+        for i, col in enumerate(X.columns):
+            if col in llm_priors:
+                initial_state[i] = 1.0
+                
+    env = FeatureSelectionEnv(X, y, is_classification, anova_metadata, initial_state=initial_state)
     
     # Using PPO architecture suitable for continuous Box observation spaces
-    model = PPO("MlpPolicy", env, verbose=0, n_steps=64, batch_size=32)
+    model = PPO("MlpPolicy", env, verbose=0, n_steps=64, batch_size=32, seed=42)
     model.learn(total_timesteps=total_timesteps)
     
     # Evaluate the learned policy to get feature importance
-    obs, info = env.reset()
+    obs, info = env.reset(seed=42)
     feature_counts = np.zeros(X.shape[1])
     
     # Sample from policy multiple times to ascertain robust variable inclusion

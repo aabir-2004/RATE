@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Chart from 'chart.js/auto';
 
 export default function Home() {
-    const [view, setView] = useState('overview');
+    const [view, setView] = useState('upload');
     const [theme, setTheme] = useState('light');
     
     // API States
@@ -12,45 +12,27 @@ export default function Home() {
     const [runId, setRunId] = useState<number | null>(null);
     const [availableColumns, setAvailableColumns] = useState<string[]>([]);
     
+    // Multi-Dataset Pipeline & Groq Integration
+    const [numFiles, setNumFiles] = useState<number>(1);
+    const [currentFileIndex, setCurrentFileIndex] = useState<number>(0);
+    const [multiDatasets, setMultiDatasets] = useState<any[]>([]);
+    const [llmInsight, setLlmInsight] = useState<any>(null);
+    const [llmLoading, setLlmLoading] = useState<boolean>(false);
+
     // UI Feedback
     const [uploadAlert, setUploadAlert] = useState<{msg: string, type: string} | null>(null);
     const [analysisAlert, setAnalysisAlert] = useState<{msg: string, type: string} | null>(null);
     
     // Chart References
-    const lineChartRef = useRef<HTMLCanvasElement>(null);
-    const barChartRef = useRef<HTMLCanvasElement>(null);
     const rankChartRef = useRef<HTMLCanvasElement>(null);
     
-    const chartInstances = useRef<{line: any, bar: any, rank: any}>({ line: null, bar: null, rank: null });
+    const chartInstances = useRef<{rank: any}>({ rank: null });
 
     useEffect(() => {
         document.body.setAttribute('data-theme', theme);
     }, [theme]);
 
     useEffect(() => {
-        if (view === 'overview' && lineChartRef.current && barChartRef.current) {
-            if (chartInstances.current.line) chartInstances.current.line.destroy();
-            if (chartInstances.current.bar) chartInstances.current.bar.destroy();
-            
-            chartInstances.current.line = new Chart(lineChartRef.current, {
-                type: 'line',
-                data: {
-                    labels: ['Waiting for tasks...'],
-                    datasets: [{ label: 'System Load Metrics', data: [0], borderColor: '#00bfa5', backgroundColor: 'rgba(0, 191, 165, 0.1)', tension: 0.4, fill: true }]
-                },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
-
-            chartInstances.current.bar = new Chart(barChartRef.current, {
-                type: 'bar',
-                data: {
-                    labels: ['Waiting for uploads...'],
-                    datasets: [{ label: 'Dataset Streams', data: [0], backgroundColor: '#00897b', borderRadius: 5 }]
-                },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
-        }
-        
         if (view === 'analysis' && rankChartRef.current) {
              if (chartInstances.current.rank) chartInstances.current.rank.destroy();
              
@@ -76,46 +58,141 @@ export default function Home() {
             return;
         }
 
-        const formData = new FormData();
-        formData.append('file', fileInput.files[0]);
-        formData.append('project_id', '1');
-        formData.append('domain', domain);
+        const file = fileInput.files[0];
+        const chunkSize = 5 * 1024 * 1024; // 5MB chunks
+        const totalChunks = Math.ceil(file.size / chunkSize);
+        const uploadId = crypto.randomUUID(); 
+        const pythonWorkerUrl = process.env.NEXT_PUBLIC_PYTHON_WORKER_URL || 'https://fatty04-rate.hf.space';
 
-        setUploadAlert({ msg: 'Uploading safely to Python worker...', type: 'alert-success' });
         try {
-            const pythonWorkerUrl = process.env.NEXT_PUBLIC_PYTHON_WORKER_URL || 'https://fatty04-rate.hf.space';
-            const res = await fetch(`${pythonWorkerUrl}/datasets/`, {
-                method: 'POST',
-                body: formData
-            });
-            const data = await res.json();
-            
-            if (!res.ok) throw new Error(data.detail || 'Upload failed');
+            // Step 1: Upload sequentially in chunks
+            for (let index = 0; index < totalChunks; index++) {
+                const start = index * chunkSize;
+                const end = Math.min(start + chunkSize, file.size);
+                const chunk = file.slice(start, end);
+                
+                const formData = new FormData();
+                formData.append('upload_id', uploadId);
+                formData.append('chunk_index', index.toString());
+                formData.append('file', chunk);
+                
+                setUploadAlert({ msg: `Uploading chunk ${index + 1} of ${totalChunks} safely...`, type: 'alert-success' });
+                
+                const res = await fetch(`${pythonWorkerUrl}/datasets/upload_chunk`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!res.ok) throw new Error(`Chunk ${index + 1} failed to safely transfer.`);
+            }
 
+            // Step 2: Finalize and process
+            setUploadAlert({ msg: 'All chunks uploaded. Assembling and processing data remotely...', type: 'alert-success' });
+            
+            const finalizeData = new FormData();
+            finalizeData.append('upload_id', uploadId);
+            finalizeData.append('file_name', file.name);
+            finalizeData.append('domain', domain);
+            finalizeData.append('project_id', '1');
+            finalizeData.append('total_chunks', totalChunks.toString());
+
+            const finalRes = await fetch(`${pythonWorkerUrl}/datasets/finalize_upload`, {
+                method: 'POST',
+                body: finalizeData
+            });
+            const data = await finalRes.json();
+            
+            if (!finalRes.ok) throw new Error(data.detail || 'Final backend processing failed.');
+
+            // Add to multi-dataset stash
+            const updatedDatasets = [...multiDatasets, data];
+            setMultiDatasets(updatedDatasets);
+            const nextIndex = currentFileIndex + 1;
+            setCurrentFileIndex(nextIndex);
+
+            if (nextIndex === numFiles) {
+                setUploadAlert({ msg: `All datasets uploaded! Connecting to Groq AI for systemic insights...`, type: 'alert-success' });
+                generateLLMInsight(updatedDatasets);
+            } else {
+                setUploadAlert({ msg: `Dataset ${nextIndex} uploaded successfully. Ready for the next one.`, type: 'alert-success' });
+            }
+
+            // Sync legacy state context if needed
             setDatasetId(data.dataset_id);
             setRunId(data.dataset_id); 
-            if (data.columns_list) setAvailableColumns(data.columns_list);
             
-            setUploadAlert({ msg: `Successfully uploaded Dataset #${data.dataset_id}! Columns initialized.`, type: 'alert-success' });
         } catch (error: any) {
             setUploadAlert({ msg: error.message, type: 'alert-error' });
         }
     };
 
-    const triggerAssessment = async (e: React.FormEvent) => {
-        e.preventDefault();
-        const form = e.target as HTMLFormElement;
-        const targetVar = (form.elements.namedItem('targetVar') as HTMLInputElement | HTMLSelectElement).value;
-        const features = availableColumns.length > 0 ? availableColumns.filter(c => c !== targetVar) : ['Auto_Detect'];
-        const method = (form.elements.namedItem('method') as HTMLSelectElement).value;
+    const generateLLMInsight = async (datasetsData: any[]) => {
+        setLlmLoading(true);
+        try {
+            const res = await fetch('/api/groq-insight', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ datasetsMetadata: datasetsData })
+            });
+            const d = await res.json();
+            if(!d.success) throw new Error(d.error);
+            setLlmInsight(d.insight);
+            
+            // Pool all unique metadata columns across multi-csv models for the Analytics Dashboard to digest
+            let allCols: string[] = [];
+            datasetsData.forEach(m => allCols.push(...m.columns_list));
+            setAvailableColumns(Array.from(new Set(allCols))); 
+            
+        } catch(err: any) {
+            setUploadAlert({ msg: 'LLM Intelligence failed: ' + err.message, type: 'alert-error' });
+        } finally {
+            setLlmLoading(false);
+        }
+    };
 
-        setAnalysisAlert({ msg: 'Routing algorithm to Vercel/Python backend...', type: 'alert-success' });
+    const triggerAssessment = async (e?: React.FormEvent, forceLLM: boolean = false) => {
+        if (e) e.preventDefault();
+        
+        let targetVar, features, method;
+
+        if (forceLLM && llmInsight) {
+            targetVar = llmInsight.target;
+            features = llmInsight.features;
+            method = 'reinforcement_learning'; 
+        } else if (e) {
+            const form = e.target as HTMLFormElement;
+            targetVar = (form.elements.namedItem('targetVar') as HTMLInputElement | HTMLSelectElement).value;
+            features = availableColumns.length > 0 ? availableColumns.filter(c => c !== targetVar) : ['Auto_Detect'];
+            method = (form.elements.namedItem('method') as HTMLSelectElement).value;
+        } else {
+            return;
+        }
+
+        // 3. Strict Front-End Validation Layer
+        if (!availableColumns.includes(targetVar)) {
+            const alertMsg = forceLLM 
+                ? `LLM Hallucination! Target "${targetVar}" doesn't exist. Fix in manual tab.`
+                : `Strict Validation Failed: Target "${targetVar}" does not exist.`;
+            
+            if (forceLLM) setUploadAlert({ msg: alertMsg, type: 'alert-error' });
+            else setAnalysisAlert({ msg: alertMsg, type: 'alert-error' });
+            return;
+        }
+
+        if (forceLLM) setView('analysis');
+        setAnalysisAlert({ msg: 'Routing strictly validated parameters to Vercel/Python backend...', type: 'alert-success' });
         
         try {
             const res = await fetch('/api/rate-metrics', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ datasetId: runId || 1, targetVariable: targetVar, features, method })
+                body: JSON.stringify({ 
+                    datasetId: runId || 1, 
+                    targetVariable: targetVar, 
+                    features: features, 
+                    method: method,
+                    llmPriors: llmInsight?.features || null // Send priors explicitly to the backend
+                })
             });
             const data = await res.json();
             
@@ -144,9 +221,8 @@ export default function Home() {
                     R.A.T.E. System
                 </div>
                 <ul className="nav-links">
-                    <li className={view === 'overview' ? 'active' : ''} onClick={() => setView('overview')}>⊞ OVERVIEW</li>
-                    <li className={view === 'upload' ? 'active' : ''} onClick={() => setView('upload')}>⇪ UPLOAD DATA</li>
-                    <li className={view === 'analysis' ? 'active' : ''} onClick={() => setView('analysis')}>📊 ANALYSIS</li>
+                    <li className={view === 'upload' ? 'active' : ''} onClick={() => setView('upload')}>⇪ DATA PIPELINE</li>
+                    <li className={view === 'analysis' ? 'active' : ''} onClick={() => setView('analysis')}>📊 RUN ANALYSIS</li>
                 </ul>
                 <div className="nav-actions">
                     <button className="theme-toggle" onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}>
@@ -155,61 +231,68 @@ export default function Home() {
                 </div>
             </nav>
 
-            {view === 'overview' && (
-                <main className="main-container dashboard-grid">
-                    <div className="card glass col-span-1" style={{ alignItems: 'center', justifyContent: 'center' }}>
-                        <div className="radial-graphic"><div className="radial-inner"></div></div>
-                        <p style={{ textAlign: 'center', color: 'var(--text-secondary)', marginBottom: '20px' }}>RL & ANOVA Intelligence Core</p>
-                        <button className="btn-primary" onClick={() => setView('upload')}>GET STARTED</button>
-                    </div>
-
-                    <div className="card glass col-span-2">
-                        <div className="card-title">Model Compute Load <span className="tag" style={{ marginLeft: 'auto' }}>Live Telemetry</span></div>
-                        <div className="chart-container"><canvas ref={lineChartRef}></canvas></div>
-                    </div>
-
-                    <div className="card glass col-span-1">
-                        <div className="card-title">⍆ Dataset Intake Stream</div>
-                        <div className="chart-container" style={{ height: '180px' }}><canvas ref={barChartRef}></canvas></div>
-                    </div>
-
-                    <div className="card glass col-span-1">
-                        <div className="card-title">⚙ Pipeline Execution Status</div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '15px' }}>
-                            <div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}><span>System Load</span> <span>0%</span></div>
-                                <div className="progress-container"><div className="progress-bar" style={{ width: '0%' }}></div></div>
-                            </div>
-                            <div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}><span>RL Optimization</span> <span>0%</span></div>
-                                <div className="progress-container"><div className="progress-bar" style={{ width: '0%' }}></div></div>
-                            </div>
-                        </div>
-                    </div>
-                </main>
-            )}
-
             {view === 'upload' && (
                 <main className="main-container dashboard-grid">
-                     <div className="card glass col-span-1">
-                        <div className="card-title">Upload Core Dataset</div>
-                        <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Note: Large files transfer natively to the heavy backend Python environment to bypass Vercel 250MB cloud limits.</p>
-                        <form onSubmit={uploadDataset}>
-                            <div className="form-group">
-                                <label>Dataset Domain</label>
-                                <select name="domainSelect" className="form-control">
-                                    <option value="Transportation">Transportation</option>
-                                    <option value="Education">Education</option>
-                                    <option value="Healthcare">Healthcare</option>
-                                </select>
-                            </div>
-                            <div className="form-group">
-                                <label>Target CSV/Excel file</label>
-                                <input type="file" name="datasetFile" accept=".csv, .xlsx" className="form-control" required />
-                            </div>
-                            <button type="submit" className="btn-primary">Upload Data</button>
-                        </form>
-                        {uploadAlert && <div className={`alert ${uploadAlert.type}`} style={{marginTop: '20px'}}>{uploadAlert.msg}</div>}
+                     <div className="card glass col-span-2">
+                        <div className="card-title">Multi-Dataset Pipeline Setup</div>
+                        {!llmInsight ? (
+                            <>
+                                <div className="form-group" style={{ maxWidth: '300px' }}>
+                                    <label>Total CSV Files in Pipeline</label>
+                                    <input 
+                                        type="number" min="1" max="10" 
+                                        className="form-control" 
+                                        value={numFiles} 
+                                        onChange={(e) => setNumFiles(parseInt(e.target.value) || 1)} 
+                                        disabled={currentFileIndex > 0}
+                                    />
+                                </div>
+
+                                {currentFileIndex < numFiles ? (
+                                    <form onSubmit={uploadDataset} style={{ marginTop: '20px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '20px' }}>
+                                        <p style={{ fontSize: '0.9rem', color: '#00bfa5', marginBottom: '10px' }}>Upload Sequence: {currentFileIndex + 1} of {numFiles}</p>
+                                        <div className="form-group">
+                                            <label>Dataset Domain</label>
+                                            <select name="domainSelect" className="form-control">
+                                                <option value="Transportation">Transportation</option>
+                                                <option value="Education">Education</option>
+                                                <option value="Healthcare">Healthcare</option>
+                                                <option value="Business">Business / E-Commerce</option>
+                                            </select>
+                                        </div>
+                                        <div className="form-group">
+                                            <label>Target CSV/Excel file</label>
+                                            <input type="file" name="datasetFile" accept=".csv, .xlsx" className="form-control" required />
+                                        </div>
+                                        <button type="submit" className="btn-primary">Stream Sequence {currentFileIndex + 1}</button>
+                                    </form>
+                                ) : (
+                                    <div style={{ marginTop: '30px', textAlign: 'center' }}>
+                                        {llmLoading ? (
+                                            <div style={{ color: '#00bfa5', padding: '20px' }}>🧠 Groq AI is cross-referencing CSV metadata...</div>
+                                        ) : null}
+                                    </div>
+                                )}
+                                {uploadAlert && <div className={`alert ${uploadAlert.type}`} style={{marginTop: '20px'}}>{uploadAlert.msg}</div>}
+                            </>
+                        ) : (
+                           <div className="llm-insight-container" style={{ marginTop: '20px', padding: '20px', background: 'rgba(0, 191, 165, 0.05)', borderRadius: '10px', border: '1px solid rgba(0, 191, 165, 0.2)' }}>
+                                <h3 style={{ color: '#00bfa5', marginBottom: '15px' }}>✨ Groq Structured Priority Recommendations</h3>
+                                <p style={{ lineHeight: '1.6', marginBottom: '15px' }}><strong>Target Selection:</strong> <span className="tag">{llmInsight.target || 'Not Set'}</span></p>
+                                <p style={{ lineHeight: '1.6', marginBottom: '15px' }}><strong>Recommended Features (Priors):</strong> <span style={{ color: 'var(--text-secondary)' }}>{llmInsight.features?.join(', ') || 'Auto'}</span></p>
+                                <p style={{ lineHeight: '1.6', marginBottom: '25px', color: 'var(--text-secondary)' }}><strong>Strategic Reasoning:</strong> {llmInsight.reasoning}</p>
+                                
+                                <div style={{ padding: '20px', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', borderLeft: '3px solid #ff9800' }}>
+                                    <p style={{ fontSize: '1.1rem', marginBottom: '15px' }}><strong>Proceed with LLM Pipeline Guidance?</strong></p>
+                                    <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
+                                        <button className="btn-primary" onClick={() => triggerAssessment(undefined, true)}>
+                                            Execute Recommended Assessment
+                                        </button>
+                                    </div>
+                                </div>
+                                <button className="theme-toggle" style={{ marginTop: '20px' }} onClick={() => { setLlmInsight(null); setCurrentFileIndex(0); setMultiDatasets([]); }}>Start Fresh Pipeline</button>
+                           </div>
+                        )}
                     </div>
                 </main>
             )}

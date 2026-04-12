@@ -41,9 +41,9 @@ def preprocess_dataset(df: pd.DataFrame, options: dict) -> tuple[pd.DataFrame, d
 
     return df, log
 
-def assess_factors(df: pd.DataFrame, target_col: str, method: str) -> dict:
+def assess_factors(df: pd.DataFrame, target_col: str, method: str, llm_priors: list = None) -> dict:
     """
-    Ranks factors based on the selected method.
+    Ranks factors based on the selected method. Incorporates LLM priors if provided.
     """
     if target_col not in df.columns:
         raise ValueError(f"Target column '{target_col}' not found.")
@@ -93,7 +93,7 @@ def assess_factors(df: pd.DataFrame, target_col: str, method: str) -> dict:
     elif method == "reinforcement_learning":
         # Launch the Deep RL PPO agent to identify optimal feature subset
         # Timesteps optimized to 250 to comply with Vercel's 10s serverless timeout constraint
-        results = run_rl_feature_selection(df, target_col, total_timesteps=250)
+        results = run_rl_feature_selection(df, target_col, total_timesteps=250, llm_priors=llm_priors)
             
     return {"method": method, "rankings": results}
 

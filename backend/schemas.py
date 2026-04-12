@@ -80,6 +80,7 @@ class FeatureSelectionResponse(ORMModel):
 class FactorAssessmentCreate(BaseModel):
     selection_id: int
     method: str
+    llm_priors: Optional[List[str]] = None
 
 class FactorAssessmentResponse(ORMModel):
     assessment_id: int

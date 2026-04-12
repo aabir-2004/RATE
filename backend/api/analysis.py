@@ -26,7 +26,7 @@ def run_factor_assessment(request: schemas.FactorAssessmentCreate, db: Session =
     df = pd.read_csv(file_path)
     
     try:
-        results = assess_factors(df, selection.target_variable, request.method)
+        results = assess_factors(df, selection.target_variable, request.method, request.llm_priors)
     except Exception as e:
          raise HTTPException(status_code=500, detail=str(e))
          

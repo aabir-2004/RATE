@@ -17,7 +17,10 @@ export async function POST(req: Request) {
     
     let cachedResult = null;
     try {
-      cachedResult = await redis.get(cacheKey);
+      const rawData = await redis.get(cacheKey);
+      if (rawData) {
+          cachedResult = JSON.parse(rawData);
+      }
     } catch (redisError) {
       console.warn('⚠️ Redis Cache Error (Proceeding without cache):', redisError);
     }
@@ -25,7 +28,7 @@ export async function POST(req: Request) {
     if (cachedResult) {
       console.log('✅ Edge Cache Hit! Bypassing heavy Python computation.');
       return NextResponse.json({ 
-        source: 'Upstash Redis', 
+        source: 'Upstash Redis / Native Redis', 
         data: cachedResult 
       });
     }
@@ -105,7 +108,9 @@ export async function POST(req: Request) {
     // Store the processed data for exactly 1 hour (3600 seconds) 
     // to instantly return it next time someone requests the same exact configuration!
     try {
-      await redis.set(cacheKey, assessmentData, { ex: 3600 });
+      if (assessmentData) {
+          await redis.set(cacheKey, JSON.stringify(assessmentData), 'EX', 3600);
+      }
     } catch (redisError) {
       console.warn('⚠️ Redis Cache Set Error:', redisError);
     }

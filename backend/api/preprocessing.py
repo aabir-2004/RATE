@@ -48,6 +48,25 @@ async def create_feature_selection(request: schemas.FeatureSelectionCreate, db: 
     if not run:
         raise HTTPException(status_code=404, detail="Preprocessing run not found")
         
+    import os
+    import pandas as pd
+    file_path = f"uploads/run_{request.run_id}_dataset.csv"
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Processed dataset file not found on server")
+        
+    df = pd.read_csv(file_path, nrows=0) # Only load headers
+    columns = df.columns.tolist()
+    
+    # Strict validation: Target Variable
+    if request.target_variable not in columns:
+        raise HTTPException(status_code=400, detail=f"Strict Validation Failed: Target variable '{request.target_variable}' does not exist.")
+        
+    # Strict validation: Feature Array (Kill hallucinations, fallback to statistical selection)
+    invalid_features = [f for f in request.selected_features if f not in columns and f != "Auto_Detect"]
+    if invalid_features:
+        print(f"Hallucination detected for features {invalid_features}. Falling back to full statistical mapping.")
+        request.selected_features = [c for c in columns if c != request.target_variable]
+        
     selection = models.FeatureSelection(
         run_id=request.run_id,
         target_variable=request.target_variable,

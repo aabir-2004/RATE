@@ -22,8 +22,7 @@ services:
       - NEXT_PUBLIC_PYTHON_WORKER_URL=http://localhost:8000
       - PYTHON_WORKER_URL=http://python-worker:8000
       - MONGODB_URI=mongodb://mongodb:27017/rate_app_atlas
-      - UPSTASH_REDIS_REST_URL=http://redis:6379
-      - UPSTASH_REDIS_REST_TOKEN=example_local_token
+      - REDIS_URL=redis://redis:6379
     depends_on:
       - python-worker
       - mongodb
