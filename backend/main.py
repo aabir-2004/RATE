@@ -1,9 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from . import models
-from .database import engine
-from .api import datasets, analysis, preprocessing, users, projects
+from backend import models
+from backend.database import engine
+from backend.api import datasets, analysis, preprocessing, users, projects
 
 import os
 import shutil

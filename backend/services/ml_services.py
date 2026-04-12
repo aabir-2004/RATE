@@ -4,7 +4,7 @@ from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
 from sklearn.feature_selection import f_classif, f_regression
 import numpy as np
 
-from .rl_env import run_rl_feature_selection
+from backend.services.rl_env import run_rl_feature_selection
 
 def preprocess_dataset(df: pd.DataFrame, options: dict) -> tuple[pd.DataFrame, dict]:
     """

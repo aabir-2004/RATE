@@ -3,9 +3,9 @@ from sqlalchemy.orm import Session
 import pandas as pd
 import numpy as np
 
-from .. import models, schemas
-from ..database import get_db
-from ..services.ml_services import assess_factors, evaluate_model # Assuming preprocessing is done
+from backend import models, schemas
+from backend.database import get_db
+from backend.services.ml_services import assess_factors, evaluate_model # Assuming preprocessing is done
 
 router = APIRouter(prefix="/analysis", tags=["Analysis"])
 

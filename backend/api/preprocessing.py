@@ -3,9 +3,9 @@ from sqlalchemy.orm import Session
 import pandas as pd
 import os
 
-from .. import models, schemas
-from ..database import get_db
-from ..services.ml_services import preprocess_dataset
+from backend import models, schemas
+from backend.database import get_db
+from backend.services.ml_services import preprocess_dataset
 
 router = APIRouter(prefix="/preprocessing", tags=["Preprocessing"])
 
