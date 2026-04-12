@@ -22,17 +22,17 @@
 }
 
 [data-theme="dark"] {
-  /* Dark Theme (Orange & Black) */
-  --bg-color: #0a0a0f;
-  --grid-color: rgba(255, 152, 0, 0.03);
-  --card-bg: rgba(18, 18, 28, 0.9);
-  --card-border: rgba(255, 152, 0, 0.12);
-  --text-primary: #f5f6fa;
-  --text-secondary: #8b95a5;
-  --accent-primary: #00bfa5;
-  --accent-secondary: #4dd0e1;
-  --accent-gradient: linear-gradient(135deg, #4dd0e1, #00bfa5);
-  --shadow-color: rgba(0, 191, 165, 0.1);
+  /* Dark Theme — Molten Orange */
+  --bg-color: #0a0807;
+  --grid-color: rgba(255, 109, 0, 0.04);
+  --card-bg: rgba(20, 14, 10, 0.92);
+  --card-border: rgba(255, 109, 0, 0.15);
+  --text-primary: #f5f0ea;
+  --text-secondary: #9a8878;
+  --accent-primary: #ff6d00;
+  --accent-secondary: #ff9100;
+  --accent-gradient: linear-gradient(135deg, #ff9100, #ff3d00);
+  --shadow-color: rgba(255, 109, 0, 0.12);
 }
 
 * {
@@ -435,4 +435,49 @@ code {
   .main-container {
     padding: 15px;
   }
+}
+
+/* ═══════════════ Plasma Burst — Logo Icon Effect ═══════════════ */
+.logo-plasma-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+}
+.logo-plasma-wrapper::before,
+.logo-plasma-wrapper::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.logo-plasma-wrapper::before {
+  width: 52px;
+  height: 52px;
+  background: conic-gradient(from 0deg, transparent 0%, rgba(255,109,0,0.95) 20%, rgba(255,200,0,0.6) 40%, transparent 60%, rgba(255,50,0,0.9) 80%, transparent 100%);
+  animation: plasma-spin 1.6s linear infinite;
+  filter: blur(1.5px);
+}
+.logo-plasma-wrapper::after {
+  width: 42px;
+  height: 42px;
+  background: radial-gradient(circle, rgba(255,180,0,0.5) 0%, rgba(255,70,0,0.35) 50%, transparent 80%);
+  animation: plasma-pulse 2s ease-in-out infinite;
+}
+[data-theme="light"] .logo-plasma-wrapper::before {
+  background: conic-gradient(from 0deg, transparent 0%, rgba(0,191,165,0.8) 20%, rgba(77,208,225,0.5) 40%, transparent 60%, rgba(0,150,136,0.7) 80%, transparent 100%);
+}
+[data-theme="light"] .logo-plasma-wrapper::after {
+  background: radial-gradient(circle, rgba(0,191,165,0.45) 0%, rgba(77,208,225,0.2) 55%, transparent 80%);
+}
+@keyframes plasma-spin {
+  from { transform: rotate(0deg) scale(1); }
+  50%  { transform: rotate(180deg) scale(1.1); }
+  to   { transform: rotate(360deg) scale(1); }
+}
+@keyframes plasma-pulse {
+  0%, 100% { transform: scale(1);   opacity: 0.65; }
+  50%       { transform: scale(1.3); opacity: 1; }
 }

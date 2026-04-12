@@ -274,7 +274,9 @@ export default function Home() {
             {/* ───────── Navigation Bar ───────── */}
             <nav className="navbar glass">
                 <div className="logo-container">
-                    <div className="logo-icon">R</div>
+                    <div className="logo-plasma-wrapper">
+                        <div className="logo-icon">R</div>
+                    </div>
                     R.A.T.E.
                 </div>
                 <ul className="nav-links">
