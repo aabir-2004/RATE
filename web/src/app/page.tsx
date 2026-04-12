@@ -62,7 +62,7 @@ export default function Home() {
         const chunkSize = 5 * 1024 * 1024; // 5MB chunks
         const totalChunks = Math.ceil(file.size / chunkSize);
         const uploadId = crypto.randomUUID(); 
-        const pythonWorkerUrl = process.env.NEXT_PUBLIC_PYTHON_WORKER_URL || 'https://fatty04-rate.hf.space';
+        const pythonWorkerUrl = process.env.NEXT_PUBLIC_PYTHON_WORKER_URL || 'https://Zeo04-rate-worker.hf.space';
 
         try {
             // Step 1: Upload sequentially in chunks
@@ -290,7 +290,12 @@ export default function Home() {
                                         </button>
                                     </div>
                                 </div>
-                                <button className="theme-toggle" style={{ marginTop: '20px' }} onClick={() => { setLlmInsight(null); setCurrentFileIndex(0); setMultiDatasets([]); }}>Start Fresh Pipeline</button>
+                                <button className="theme-toggle" style={{ marginTop: '20px' }} onClick={() => { 
+                                    // Purge old session files from Python server
+                                    const pythonWorkerUrl = process.env.NEXT_PUBLIC_PYTHON_WORKER_URL || 'https://Zeo04-rate-worker.hf.space';
+                                    fetch(`${pythonWorkerUrl}/datasets/purge-session`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify([]) }).catch(() => {});
+                                    setLlmInsight(null); setCurrentFileIndex(0); setMultiDatasets([]); setDatasetId(null); setRunId(null); setAvailableColumns([]); 
+                                }}>Start Fresh Pipeline</button>
                            </div>
                         )}
                     </div>
