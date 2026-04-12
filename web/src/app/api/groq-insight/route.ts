@@ -28,7 +28,7 @@ Return exactly and ONLY a JSON object evaluating this with the following structu
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                model: "llama3-8b-8192",
+                model: "llama-3.3-70b-versatile",
                 messages: [
                     { role: "system", content: "You are an expert data science assistant. You must reply strictly in valid JSON." },
                     { role: "user", content: promptText }
