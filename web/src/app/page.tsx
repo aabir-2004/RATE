@@ -42,26 +42,26 @@ export default function Home() {
              chartInstances.current.rank = new Chart(rankChartRef.current, {
                 type: 'bar',
                 data: {
-                    labels: ['Telemetry Awaiting Stream...'],
+                    labels: ['Awaiting analysis...'],
                     datasets: [{ 
-                        label: 'Weight', 
+                        label: 'Factor Importance Score', 
                         data: [0], 
-                        backgroundColor: theme === 'dark' ? '#00e5ff' : '#00e5ff',
-                        borderRadius: 4,
-                        maxBarThickness: 32,
+                        backgroundColor: 'rgba(0, 191, 165, 0.6)',
+                        borderColor: 'rgba(0, 191, 165, 1)',
+                        borderWidth: 1,
+                        borderRadius: 6,
                     }]
                 },
                 options: { 
                     indexAxis: 'y', 
                     responsive: true, 
                     maintainAspectRatio: false,
-                    plugins: { 
+                    plugins: {
                         legend: { display: false },
-                        tooltip: { backgroundColor: '#0c0c10', titleColor: '#00e5ff', bodyColor: '#ffffff', cornerRadius: 8 }
                     },
                     scales: {
-                        x: { display: false },
-                        y: { grid: { display: false }, ticks: { color: theme === 'dark' ? '#f8f9fa' : '#1a1b1e', font: { weight: '600' as any }}}
+                        x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: 'var(--text-secondary)' }},
+                        y: { grid: { display: false }, ticks: { color: 'var(--text-primary)', font: { weight: 'bold' as any }}}
                     }
                 }
             });
@@ -75,23 +75,27 @@ export default function Home() {
         const domain = (form.elements.namedItem('domainSelect') as HTMLSelectElement).value;
 
         if (!fileInput.files || fileInput.files.length === 0) {
-            setUploadAlert({ msg: 'No file detected.', type: 'alert-error' });
+            setUploadAlert({ msg: 'Please select a file first.', type: 'alert-error' });
             return;
         }
 
         const file = fileInput.files[0];
+        
+        // Hard size validation (matches backend 100MB limit)
         if (file.size > 100 * 1024 * 1024) {
-            setUploadAlert({ msg: `Oversized payload rejected (${(file.size / 1024 / 1024).toFixed(1)}MB). Max 100MB.`, type: 'alert-error' });
+            setUploadAlert({ msg: `File too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum is 100 MB.`, type: 'alert-error' });
             return;
         }
         
-        const chunkSize = 5 * 1024 * 1024;
+        const chunkSize = 5 * 1024 * 1024; // 5MB chunks
         const totalChunks = Math.ceil(file.size / chunkSize);
         const uploadId = crypto.randomUUID(); 
-        const pythonWorkerUrl = (process.env.NEXT_PUBLIC_PYTHON_WORKER_URL || 'https://Zeo04-rate-worker.hf.space').replace(/\/$/, '');
+        const pythonWorkerUrl = process.env.NEXT_PUBLIC_PYTHON_WORKER_URL || 'https://Zeo04-rate-worker.hf.space';
 
         try {
             setUploadProgress(0);
+            
+            // Step 1: Upload sequentially in chunks
             for (let index = 0; index < totalChunks; index++) {
                 const start = index * chunkSize;
                 const end = Math.min(start + chunkSize, file.size);
@@ -102,14 +106,21 @@ export default function Home() {
                 formData.append('chunk_index', index.toString());
                 formData.append('file', chunk);
                 
-                setUploadProgress(Math.round(((index + 1) / totalChunks) * 85));
+                const progress = Math.round(((index + 1) / totalChunks) * 80);
+                setUploadProgress(progress);
+                setUploadAlert({ msg: `Streaming chunk ${index + 1}/${totalChunks} (${(file.size / 1024 / 1024).toFixed(1)} MB)...`, type: 'alert-success' });
                 
-                const res = await fetch(`${pythonWorkerUrl}/datasets/upload_chunk`, { method: 'POST', body: formData });
-                if (!res.ok) throw new Error(`Link Dropped @ Chunk ${index + 1}`);
+                const res = await fetch(`${pythonWorkerUrl}/datasets/upload_chunk`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!res.ok) throw new Error(`Chunk ${index + 1} failed to transfer.`);
             }
 
-            setUploadProgress(95);
-            setUploadAlert({ msg: 'Finalizing secure assembly...', type: 'alert-success' });
+            // Step 2: Finalize and process
+            setUploadProgress(90);
+            setUploadAlert({ msg: 'Assembling & extracting metadata remotely...', type: 'alert-success' });
             
             const finalizeData = new FormData();
             finalizeData.append('upload_id', uploadId);
@@ -118,21 +129,27 @@ export default function Home() {
             finalizeData.append('project_id', '1');
             finalizeData.append('total_chunks', totalChunks.toString());
 
-            const finalRes = await fetch(`${pythonWorkerUrl}/datasets/finalize_upload`, { method: 'POST', body: finalizeData });
+            const finalRes = await fetch(`${pythonWorkerUrl}/datasets/finalize_upload`, {
+                method: 'POST',
+                body: finalizeData
+            });
             const data = await finalRes.json();
-            if (!finalRes.ok) throw new Error(data.detail);
+            
+            if (!finalRes.ok) throw new Error(data.detail || 'Final backend processing failed.');
 
             setUploadProgress(100);
+
+            // Add to multi-dataset stash
             const updatedDatasets = [...multiDatasets, data];
             setMultiDatasets(updatedDatasets);
             const nextIndex = currentFileIndex + 1;
             setCurrentFileIndex(nextIndex);
 
             if (nextIndex === numFiles) {
-                setUploadAlert({ msg: `Stream Synchronized. Engaging Groq LLM Intelligence...`, type: 'alert-success' });
+                setUploadAlert({ msg: `All ${numFiles} dataset(s) uploaded! Routing to Groq AI...`, type: 'alert-success' });
                 generateLLMInsight(updatedDatasets);
             } else {
-                setUploadAlert({ msg: `Sequence ${nextIndex}/${numFiles} active. Uploading next.`, type: 'alert-success' });
+                setUploadAlert({ msg: `Dataset ${nextIndex}/${numFiles} complete. Upload next file.`, type: 'alert-success' });
             }
 
             setDatasetId(data.dataset_id);
@@ -161,7 +178,7 @@ export default function Home() {
             setAvailableColumns(Array.from(new Set(allCols))); 
             
         } catch(err: any) {
-            setUploadAlert({ msg: 'LLM Node Fault: ' + err.message, type: 'alert-error' });
+            setUploadAlert({ msg: 'LLM Intelligence failed: ' + err.message, type: 'alert-error' });
         } finally {
             setLlmLoading(false);
         }
@@ -185,15 +202,20 @@ export default function Home() {
             return;
         }
 
+        // Strict Front-End Validation Layer
         if (!availableColumns.includes(targetVar)) {
-            const alertMsg = forceLLM ? `LLM Hallucination purge: "${targetVar}" not in schema.` : `Validation Error: Column "${targetVar}" missing.`;
-            setAnalysisAlert({ msg: alertMsg, type: 'alert-error' });
+            const alertMsg = forceLLM 
+                ? `LLM Hallucination Blocked! Target "${targetVar}" doesn't exist in dataset.`
+                : `Validation Failed: Target "${targetVar}" not found.`;
+            
+            if (forceLLM) setUploadAlert({ msg: alertMsg, type: 'alert-error' });
+            else setAnalysisAlert({ msg: alertMsg, type: 'alert-error' });
             return;
         }
 
         if (forceLLM) setView('analysis');
         setIsAnalyzing(true);
-        setAnalysisAlert({ msg: 'Executing PPO/ANOVA Pipeline...', type: 'alert-success' });
+        setAnalysisAlert({ msg: 'Executing deterministic pipeline: Validation → Preprocessing → RL/ANOVA...', type: 'alert-success' });
         
         try {
             const res = await fetch('/api/rate-metrics', {
@@ -208,19 +230,29 @@ export default function Home() {
                 })
             });
             const data = await res.json();
-            if (!res.ok) throw new Error(data.error);
+            
+            if (!res.ok) throw new Error(data.error || 'Serverless failure');
 
+            // Draw Chart 
             if (chartInstances.current.rank && data.data && data.data.results_json) {
                 const ranks = data.data.results_json.rankings;
-                const sorted = Object.entries(ranks).sort((a: any, b: any) => b[1] - a[1]);
+                const sortedEntries = Object.entries(ranks).sort((a: any, b: any) => b[1] - a[1]);
+                const gradient = sortedEntries.map((_: any, i: number) => {
+                    const opacity = 1 - (i * 0.06);
+                    return `rgba(0, 191, 165, ${Math.max(opacity, 0.2)})`;
+                });
                 
-                chartInstances.current.rank.data.labels = sorted.map(e => e[0].length > 18 ? e[0].substring(0, 15) + '...' : e[0]);
-                chartInstances.current.rank.data.datasets[0].data = sorted.map(e => e[1]);
+                chartInstances.current.rank.data.labels = sortedEntries.map(e => e[0]);
+                chartInstances.current.rank.data.datasets[0].data = sortedEntries.map(e => e[1]);
+                chartInstances.current.rank.data.datasets[0].backgroundColor = gradient;
                 chartInstances.current.rank.update();
+                
                 setAnalysisResults(data.data.results_json);
             }
+
             setResultSource(data.source);
-            setAnalysisAlert({ msg: `Computation Synced: ${data.source}`, type: 'alert-success' });
+            setAnalysisAlert({ msg: `Pipeline complete — ${data.source}`, type: 'alert-success' });
+            
         } catch (error: any) {
             setAnalysisAlert({ msg: error.message, type: 'alert-error' });
         } finally {
@@ -229,161 +261,269 @@ export default function Home() {
     };
 
     const resetPipeline = () => {
-        const pythonWorkerUrl = (process.env.NEXT_PUBLIC_PYTHON_WORKER_URL || 'https://Zeo04-rate-worker.hf.space').replace(/\/$/, '');
+        const pythonWorkerUrl = process.env.NEXT_PUBLIC_PYTHON_WORKER_URL || 'https://Zeo04-rate-worker.hf.space';
         fetch(`${pythonWorkerUrl}/datasets/purge-session`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify([]) }).catch(() => {});
-        setLlmInsight(null); setCurrentFileIndex(0); setMultiDatasets([]); setDatasetId(null); setRunId(null); setAvailableColumns([]);
-        setUploadAlert(null); setAnalysisAlert(null); setUploadProgress(0); setAnalysisResults(null); setResultSource('');
+        setLlmInsight(null); setCurrentFileIndex(0); setMultiDatasets([]); 
+        setDatasetId(null); setRunId(null); setAvailableColumns([]);
+        setUploadAlert(null); setAnalysisAlert(null); setUploadProgress(0);
+        setAnalysisResults(null); setResultSource('');
     };
 
     return (
-        <div style={{ paddingBottom: '80px' }}>
-            {/* ── Navbar ── */}
-            <nav className="navbar glass animate-slide-up">
+        <div style={{ paddingBottom: '50px' }}>
+            {/* ───────── Navigation Bar ───────── */}
+            <nav className="navbar glass">
                 <div className="logo-container">
                     <div className="logo-icon">R</div>
-                    R.A.T.E. <span style={{ color: 'var(--accent)', fontSize: '0.6rem', fontWeight: 900, textTransform: 'uppercase', marginBottom: '8px' }}>CORE</span>
+                    R.A.T.E.
                 </div>
                 <ul className="nav-links">
-                    <li className={view === 'landing' ? 'active' : ''} onClick={() => setView('landing')}>Home</li>
-                    <li className={view === 'upload' ? 'active' : ''} onClick={() => setView('upload')}>Pipeline</li>
-                    <li className={view === 'analysis' ? 'active' : ''} onClick={() => setView('analysis')}>Analysis</li>
+                    <li className={view === 'landing' ? 'active' : ''} onClick={() => setView('landing')}>◈ HOME</li>
+                    <li className={view === 'upload' ? 'active' : ''} onClick={() => setView('upload')}>⇪ PIPELINE</li>
+                    <li className={view === 'analysis' ? 'active' : ''} onClick={() => setView('analysis')}>📊 ANALYSIS</li>
                 </ul>
                 <div className="nav-actions">
                     <button className="theme-toggle" onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}>
-                        {theme === 'light' ? 'Studio Dark' : 'Paper White'}
+                        {theme === 'light' ? 'Dark ☾' : 'Light ☀'}
                     </button>
                 </div>
             </nav>
 
-            {/* ── LANDING ── */}
+            {/* ───────── LANDING PAGE ───────── */}
             {view === 'landing' && (
-                <main className="main-container animate-slide-up" style={{ maxWidth: '1100px', margin: '0 auto' }}>
-                    <div style={{ textAlign: 'center', padding: '100px 0 60px' }}>
-                        <div className="radial-graphic" style={{ margin: '0 auto 40px' }}>
-                            <div className="radial-ring"></div>
-                            <div className="radial-inner" style={{ background: 'var(--text-main)', boxShadow: '0 0 30px var(--accent-dim)' }}></div>
+                <main className="main-container">
+                    {/* Hero Section */}
+                    <div style={{ textAlign: 'center', padding: '60px 20px 40px' }}>
+                        <div className="radial-graphic" style={{ margin: '0 auto 30px' }}>
+                            <div className="radial-inner"></div>
                         </div>
-                        <h1 style={{ fontSize: '3.5rem', fontWeight: 900, letterSpacing: '-0.04em', lineHeight: '0.9', marginBottom: '24px' }}>
-                            Precision Analytical <br /> Node.
+                        <h1 style={{ fontSize: '2.8rem', fontWeight: 800, marginBottom: '15px', background: 'var(--accent-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                            R.A.T.E. Intelligence
                         </h1>
-                        <p style={{ color: 'var(--text-dim)', fontSize: '1.2rem', fontWeight: 500, maxWidth: '600px', margin: '0 auto 48px', lineHeight: '1.6' }}>
-                            The Reinforcement Analytical Target Engine. <br />
-                            Deterministic feature importance for mission-critical datasets.
+                        <p style={{ fontSize: '1.15rem', color: 'var(--text-secondary)', maxWidth: '650px', margin: '0 auto 40px', lineHeight: '1.7' }}>
+                            Reinforcement-based Assessment of Target Elements — A deterministic ML platform 
+                            that fuses Deep RL with ANOVA statistics to identify the optimal predictive factors in any dataset.
                         </p>
-                        <button className="btn-primary" onClick={() => setView('upload')}>
-                            Connect Pipeline <span style={{ opacity: 0.4 }}>→</span>
+                        <button className="btn-primary" style={{ fontSize: '1.1rem', padding: '16px 45px' }} onClick={() => setView('upload')}>
+                            Launch Pipeline →
                         </button>
                     </div>
 
-                    <div className="dashboard-grid">
-                        <div className="card">
-                            <div className="card-title">Machine Intelligence</div>
-                            <p style={{ fontSize: '0.9rem', color: 'var(--text-dim)', lineHeight: '1.6' }}>
-                                GROQ Llama-3-70B node processes metadata to generate structural priors for the RL agent.
+                    {/* Architecture Feature Cards */}
+                    <div className="dashboard-grid" style={{ marginTop: '40px' }}>
+                        <div className="card glass col-span-1 feature-card">
+                            <div className="feature-icon">🧠</div>
+                            <div className="card-title">LLM-as-Prior</div>
+                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.6' }}>
+                                Groq Llama-3 analyzes metadata to propose targets & features. Its suggestions are injected 
+                                as <strong>initial weights</strong> into the RL agent — not as decisions.
                             </p>
                         </div>
-                        <div className="card">
-                            <div className="card-title">Deterministic Gate</div>
-                            <p style={{ fontSize: '0.9rem', color: 'var(--text-dim)', lineHeight: '1.6' }}>
-                                Seeding strategy fixed to <code>#42</code> ensuring mathematical parity across every single deployment.
+                        <div className="card glass col-span-1 feature-card">
+                            <div className="feature-icon">🔬</div>
+                            <div className="card-title">Deterministic Execution</div>
+                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.6' }}>
+                                All ML computations are seeded (<code>random_state=42</code>). Same data in = same results out. 
+                                <strong> Every single time.</strong> No statistical drift.
                             </p>
                         </div>
-                        <div className="card">
-                            <div className="card-title">Ephemeral Cluster</div>
-                            <p style={{ fontSize: '0.9rem', color: 'var(--text-dim)', lineHeight: '1.6' }}>
-                                Auto-purge protocol deletes raw CSV payloads post-analysis. 0% data retention for maximum privacy.
+                        <div className="card glass col-span-1 feature-card">
+                            <div className="feature-icon">🛡️</div>
+                            <div className="card-title">Hallucination Gate</div>
+                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.6' }}>
+                                A strict validation barrier cross-checks every LLM suggestion against actual CSV headers. 
+                                Hallucinated columns are <strong>instantly purged</strong>.
                             </p>
+                        </div>
+                        <div className="card glass col-span-1 feature-card">
+                            <div className="feature-icon">📦</div>
+                            <div className="card-title">Chunked Uploads</div>
+                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.6' }}>
+                                Files are split into 5 MB chunks and streamed to the backend. Supports datasets up to <strong>100 MB</strong> 
+                                with a flat memory footprint.
+                            </p>
+                        </div>
+                        <div className="card glass col-span-1 feature-card">
+                            <div className="feature-icon">⚡</div>
+                            <div className="card-title">Redis Session Cache</div>
+                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.6' }}>
+                                Duplicate analyses return instantly via Upstash Redis. Results are cached for 1 hour, 
+                                then <strong>self-destruct</strong> automatically.
+                            </p>
+                        </div>
+                        <div className="card glass col-span-1 feature-card">
+                            <div className="feature-icon">♻️</div>
+                            <div className="card-title">Disposable Architecture</div>
+                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.6' }}>
+                                Zero permanent storage. Raw CSVs are <strong>auto-purged</strong> after analysis. 
+                                MongoDB stores only tiny metadata receipts with a 1-hour TTL.
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Tech Stack Footer */}
+                    <div style={{ textAlign: 'center', marginTop: '50px', padding: '30px', borderTop: '1px solid var(--card-border)' }}>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '12px' }}>Powered By</p>
+                        <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', flexWrap: 'wrap' }}>
+                            {['Next.js', 'FastAPI', 'PPO (Stable-Baselines3)', 'ANOVA', 'Groq Llama-3', 'Redis', 'MongoDB'].map(tech => (
+                                <span key={tech} className="tag">{tech}</span>
+                            ))}
                         </div>
                     </div>
                 </main>
             )}
 
-            {/* ── PIPELINE ── */}
+            {/* ───────── DATA PIPELINE PAGE ───────── */}
             {view === 'upload' && (
-                <main className="main-container dashboard-grid animate-slide-up" style={{ maxWidth: '1300px', margin: '0 auto' }}>
-                    <div className="card col-span-1" style={{ alignSelf: 'start' }}>
-                        <div className="card-title">Ingestion Control</div>
+                <main className="main-container dashboard-grid">
+                    {/* Left: Upload Panel */}
+                    <div className="card glass col-span-1">
+                        <div className="card-title">⇪ Data Ingestion</div>
                         
                         {!llmInsight && (
-                            <form onSubmit={uploadDataset}>
+                            <>
                                 <div className="form-group">
-                                    <label>Cluster Size (Datasets)</label>
-                                    <input type="number" className="form-control" value={numFiles} onChange={e => setNumFiles(parseInt(e.target.value) || 1)} disabled={currentFileIndex > 0}/>
+                                    <label>Datasets in Pipeline</label>
+                                    <input 
+                                        type="number" min="1" max="10" 
+                                        className="form-control" 
+                                        value={numFiles} 
+                                        onChange={(e) => setNumFiles(parseInt(e.target.value) || 1)} 
+                                        disabled={currentFileIndex > 0}
+                                    />
                                 </div>
+
                                 {currentFileIndex < numFiles ? (
-                                    <>
+                                    <form onSubmit={uploadDataset}>
+                                        <div style={{ fontSize: '0.85rem', color: 'var(--accent-primary)', marginBottom: '15px', fontWeight: 600 }}>
+                                            Sequence {currentFileIndex + 1} of {numFiles}
+                                        </div>
                                         <div className="form-group">
                                             <label>Domain</label>
                                             <select name="domainSelect" className="form-control">
-                                                <option>Transportation</option><option>Healthcare</option><option>Education</option><option>Business</option><option>Finance</option><option>Other</option>
+                                                <option value="Transportation">Transportation</option>
+                                                <option value="Education">Education</option>
+                                                <option value="Healthcare">Healthcare</option>
+                                                <option value="Business">Business / E-Commerce</option>
+                                                <option value="Finance">Finance</option>
+                                                <option value="Technology">Technology</option>
+                                                <option value="Other">Other</option>
                                             </select>
                                         </div>
-                                        <div className="form-group" style={{ marginBottom: '32px' }}>
-                                            <label>Payload (CSV)</label>
-                                            <input type="file" name="datasetFile" accept=".csv" className="form-control" required style={{ paddingTop: '10px' }} />
+                                        <div className="form-group">
+                                            <label>CSV / Excel File (Max 100 MB)</label>
+                                            <input type="file" name="datasetFile" accept=".csv, .xlsx" className="form-control" required />
                                         </div>
+                                        
                                         {uploadProgress > 0 && (
-                                            <div className="progress-container" style={{ marginBottom: '20px' }}>
-                                                <div className="progress-bar" style={{ width: `${uploadProgress}%` }}></div>
+                                            <div className="progress-container" style={{ marginBottom: '15px' }}>
+                                                <div className="progress-bar" style={{ width: `${uploadProgress}%`, transition: 'width 0.3s ease' }}></div>
                                             </div>
                                         )}
-                                        <button type="submit" className="btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
-                                            Inject Sequence {currentFileIndex + 1}
+                                        
+                                        <button type="submit" className="btn-primary" style={{ width: '100%' }}>
+                                            Stream Dataset {currentFileIndex + 1}
                                         </button>
-                                    </>
+                                    </form>
                                 ) : (
-                                    <div style={{ textAlign: 'center', padding: '40px 0' }}>
-                                        {llmLoading && <div style={{ fontWeight: 800, color: 'var(--accent)', letterSpacing: '2px' }}>BRAIN LINK ACTIVE...</div>}
+                                    <div style={{ textAlign: 'center', padding: '20px' }}>
+                                        {llmLoading && (
+                                            <div style={{ color: 'var(--accent-primary)' }}>
+                                                <div className="radial-graphic" style={{ width: '60px', height: '60px', margin: '0 auto 15px' }}>
+                                                    <div className="radial-inner" style={{ width: '25px', height: '25px' }}></div>
+                                                </div>
+                                                Groq AI analyzing metadata...
+                                            </div>
+                                        )}
                                     </div>
                                 )}
-                            </form>
+                            </>
                         )}
-                        {uploadAlert && <div className={`alert ${uploadAlert.type}`} style={{ marginTop: '20px' }}>{uploadAlert.msg}</div>}
+                        
+                        {uploadAlert && <div className={`alert ${uploadAlert.type}`}>{uploadAlert.msg}</div>}
                     </div>
 
-                    <div className="card col-span-2">
-                        <div className="card-title">Status Telemetry</div>
-                        
+                    {/* Right: Status & LLM Panel */}
+                    <div className="card glass col-span-2">
                         {!llmInsight ? (
-                            <div className="table-wrapper">
-                                <table className="data-table">
-                                    <thead>
-                                        <tr><th>ID</th><th>Source Name</th><th>Rows</th><th>Dim</th></tr>
-                                    </thead>
-                                    <tbody>
-                                        {multiDatasets.length > 0 ? multiDatasets.map((ds, i) => (
-                                            <tr key={i}>
-                                                <td><span className="metric-pill">{i + 1}</span></td>
-                                                <td style={{ fontWeight: 700 }}>{ds.file_name}</td>
-                                                <td>{ds.rows?.toLocaleString()}</td>
-                                                <td style={{ color: 'var(--accent)', fontWeight: 800 }}>{ds.columns}</td>
-                                            </tr>
-                                        )) : (
-                                            <tr><td colSpan={4} style={{ textAlign: 'center', color: 'var(--text-dim)', padding: '60px 0' }}>Awaiting Data Stream Inject...</td></tr>
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
+                            <>
+                                <div className="card-title">📡 Pipeline Status</div>
+                                
+                                {/* Uploaded Datasets Summary */}
+                                {multiDatasets.length > 0 ? (
+                                    <div>
+                                        <table className="data-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>#</th>
+                                                    <th>File</th>
+                                                    <th>Rows</th>
+                                                    <th>Columns</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {multiDatasets.map((ds, i) => (
+                                                    <tr key={i}>
+                                                        <td><span className="tag">{i + 1}</span></td>
+                                                        <td>{ds.file_name}</td>
+                                                        <td>{ds.rows?.toLocaleString()}</td>
+                                                        <td>{ds.columns}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                ) : (
+                                    <div style={{ textAlign: 'center', padding: '50px 20px', color: 'var(--text-secondary)' }}>
+                                        <p style={{ fontSize: '2.5rem', marginBottom: '15px' }}>📂</p>
+                                        <p>No datasets uploaded yet.</p>
+                                        <p style={{ fontSize: '0.85rem', marginTop: '8px' }}>Upload your CSV files to begin the intelligence pipeline.</p>
+                                    </div>
+                                )}
+                                
+                                {/* Architecture Info */}
+                                <div style={{ marginTop: 'auto', padding: '15px', background: 'rgba(0,191,165,0.05)', borderRadius: '12px', border: '1px solid rgba(0,191,165,0.1)' }}>
+                                    <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+                                        <strong>Pipeline Flow:</strong> Chunked Upload → Metadata Extraction → Groq AI Analysis → 
+                                        Strict Validation → LLM Prior Injection → PPO/ANOVA Execution → Auto-Purge
+                                    </p>
+                                </div>
+                            </>
                         ) : (
-                            <div className="animate-slide-up">
-                                <h1 style={{ fontSize: '2rem', fontWeight: 900, marginBottom: '24px', letterSpacing: '-0.03em' }}>Intelligence Report</h1>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '32px' }}>
-                                    <div className="card" style={{ background: 'var(--bg-offset)', padding: '20px' }}>
-                                        <label style={{ fontSize: '0.65rem', fontWeight: 900, color: 'var(--text-dim)', textTransform: 'uppercase' }}>Primary Target</label>
-                                        <div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--accent)' }}>{llmInsight.target}</div>
+                            /* LLM Recommendation Panel */
+                            <div>
+                                <div className="card-title" style={{ marginBottom: '20px' }}>✨ Groq AI Recommendations</div>
+                                
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '20px' }}>
+                                    <div style={{ padding: '20px', background: 'rgba(0,191,165,0.08)', borderRadius: '12px', border: '1px solid rgba(0,191,165,0.2)' }}>
+                                        <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '1px' }}>Target Variable</p>
+                                        <p style={{ fontSize: '1.3rem', fontWeight: 700, color: 'var(--accent-primary)' }}>{llmInsight.target || 'Not Set'}</p>
                                     </div>
-                                    <div className="card" style={{ background: 'var(--bg-offset)', padding: '20px' }}>
-                                        <label style={{ fontSize: '0.65rem', fontWeight: 900, color: 'var(--text-dim)', textTransform: 'uppercase' }}>Feature Set Size</label>
-                                        <div style={{ fontSize: '1.2rem', fontWeight: 800 }}>{llmInsight.features?.length}</div>
+                                    <div style={{ padding: '20px', background: 'rgba(255,152,0,0.08)', borderRadius: '12px', border: '1px solid rgba(255,152,0,0.2)' }}>
+                                        <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '1px' }}>Features Detected</p>
+                                        <p style={{ fontSize: '1.3rem', fontWeight: 700, color: 'var(--text-primary)' }}>{llmInsight.features?.length || 0}</p>
                                     </div>
                                 </div>
-                                <div style={{ marginBottom: '32px' }}>
-                                    <label style={{ fontSize: '0.65rem', fontWeight: 900, color: 'var(--text-dim)', textTransform: 'uppercase', marginBottom: '12px', display: 'block' }}>Analytical Reasoning</label>
-                                    <div style={{ lineHeight: '1.7', color: 'var(--text-main)', fontSize: '1rem', fontWeight: 500 }}>{llmInsight.reasoning}</div>
+
+                                <div style={{ marginBottom: '15px' }}>
+                                    <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>Recommended Features (Priors)</p>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                        {llmInsight.features?.map((f: string) => (
+                                            <span key={f} className="tag">{f}</span>
+                                        ))}
+                                    </div>
                                 </div>
-                                <div style={{ display: 'flex', gap: '12px' }}>
-                                    <button className="btn-primary" onClick={() => triggerAssessment(undefined, true)}>Connect Target Node</button>
-                                    <button className="theme-toggle" style={{ height: '48px' }} onClick={resetPipeline}>Disconnect Pipeline</button>
+
+                                <div style={{ padding: '15px', background: 'rgba(255,255,255,0.03)', borderRadius: '10px', borderLeft: '3px solid var(--accent-primary)', marginBottom: '25px' }}>
+                                    <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '6px' }}>Strategic Reasoning</p>
+                                    <p style={{ color: 'var(--text-primary)', lineHeight: '1.7', fontSize: '0.95rem' }}>{llmInsight.reasoning}</p>
+                                </div>
+                                
+                                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                                    <button className="btn-primary" onClick={() => triggerAssessment(undefined, true)}>
+                                        {isAnalyzing ? '⏳ Executing...' : '🚀 Execute with LLM Priors'}
+                                    </button>
+                                    <button className="theme-toggle" onClick={resetPipeline}>↻ Start Fresh</button>
                                 </div>
                             </div>
                         )}
@@ -391,51 +531,78 @@ export default function Home() {
                 </main>
             )}
 
-            {/* ── ANALYSIS ── */}
+            {/* ───────── ANALYSIS PAGE ───────── */}
             {view === 'analysis' && (
-                <main className="main-container dashboard-grid animate-slide-up" style={{ maxWidth: '1300px', margin: '0 auto' }}>
-                    <div className="card col-span-1" style={{ alignSelf: 'start' }}>
-                        <div className="card-title">Manual Overrides</div>
+                <main className="main-container dashboard-grid">
+                    {/* Manual Controls */}
+                    <div className="card glass col-span-1">
+                        <div className="card-title">⚙ Manual Assessment</div>
                         <form onSubmit={triggerAssessment}>
                             <div className="form-group">
-                                <label>Target Parameter</label>
-                                <select name="targetVar" className="form-control">
-                                    {availableColumns.map(col => <option value={col} key={col}>{col}</option>)}
-                                </select>
+                                <label>Target Variable</label>
+                                {availableColumns.length > 0 ? (
+                                    <select name="targetVar" className="form-control">
+                                        {availableColumns.map(col => <option value={col} key={col}>{col}</option>)}
+                                    </select>
+                                ) : (
+                                    <input type="text" name="targetVar" className="form-control" placeholder="Upload data first..." />
+                                )}
                             </div>
-                            <div className="form-group" style={{ marginBottom: '32px' }}>
-                                <label>Heuristics</label>
+                            <div className="form-group">
+                                <label>Features</label>
+                                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', padding: '10px 0' }}>
+                                    RL agent evaluates all {availableColumns.length ? availableColumns.length - 1 : '—'} parameters automatically.
+                                </div>
+                            </div>
+                            <div className="form-group">
+                                <label>Algorithm</label>
                                 <select name="method" className="form-control">
-                                    <option value="reinforcement_learning">Deep RL Optimizer</option>
-                                    <option value="random_forest">Baseline Check</option>
+                                    <option value="reinforcement_learning">Deep RL (PPO + ANOVA)</option>
+                                    <option value="random_forest">Random Forest (Baseline)</option>
                                 </select>
                             </div>
-                            <button type="submit" className="btn-primary" style={{ width: '100%', justifyContent: 'center' }} disabled={isAnalyzing}>
-                                {isAnalyzing ? 'Processing Trace...' : 'Initiate Scan'}
+                            <button type="submit" className="btn-primary" style={{ width: '100%' }} disabled={isAnalyzing}>
+                                {isAnalyzing ? '⏳ Computing...' : 'Run Assessment'}
                             </button>
                         </form>
-                        {analysisAlert && <div className={`alert ${analysisAlert.type}`} style={{ marginTop: '20px' }}>{analysisAlert.msg}</div>}
+                        {analysisAlert && <div className={`alert ${analysisAlert.type}`} style={{marginTop: '15px'}}>{analysisAlert.msg}</div>}
+                        
+                        {/* Source indicator */}
                         {resultSource && (
-                            <div style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid var(--border)' }}>
-                                <div style={{ fontSize: '0.65rem', fontWeight: 900, color: 'var(--text-dim)', textTransform: 'uppercase' }}>Hardware Load Source</div>
-                                <div style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--accent)' }}>{resultSource}</div>
+                            <div style={{ marginTop: 'auto', padding: '12px', background: 'rgba(0,191,165,0.05)', borderRadius: '10px', border: '1px solid rgba(0,191,165,0.1)' }}>
+                                <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>Source</p>
+                                <p style={{ fontSize: '0.85rem', color: 'var(--accent-primary)', fontWeight: 600 }}>{resultSource}</p>
                             </div>
                         )}
                     </div>
 
-                    <div className="card col-span-2">
-                        <div className="card-title">Importance Visualization</div>
-                        <div className="chart-container" style={{ height: '380px', marginTop: '20px' }}><canvas ref={rankChartRef}></canvas></div>
-                        {analysisResults && (
-                            <div className="table-wrapper" style={{ marginTop: '32px' }}>
+                    {/* Results Chart */}
+                    <div className="card glass col-span-2">
+                        <div className="card-title">
+                            Factor Importance Rankings
+                            {analysisResults && <span className="tag" style={{ marginLeft: 'auto' }}>{analysisResults.method?.toUpperCase()}</span>}
+                        </div>
+                        <div className="chart-container" style={{ height: '350px' }}><canvas ref={rankChartRef}></canvas></div>
+                        
+                        {/* Results Table */}
+                        {analysisResults?.rankings && (
+                            <div style={{ marginTop: '15px' }}>
                                 <table className="data-table">
-                                    <thead><tr><th>#</th><th>Parameter Node</th><th>Weight Score</th></tr></thead>
+                                    <thead>
+                                        <tr>
+                                            <th>Rank</th>
+                                            <th>Feature</th>
+                                            <th>Score</th>
+                                        </tr>
+                                    </thead>
                                     <tbody>
-                                        {Object.entries(analysisResults.rankings).sort((a: any, b: any) => b[1] - a[1]).map(([f, s]: any, i) => (
-                                            <tr key={i}>
-                                                <td><span className="metric-pill">#{i + 1}</span></td>
-                                                <td style={{ fontWeight: i === 0 ? 900 : 500 }}>{f}</td>
-                                                <td style={{ fontFamily: 'monospace', fontWeight: 800, color: 'var(--accent)' }}>{(s as number).toFixed(5)}</td>
+                                        {Object.entries(analysisResults.rankings)
+                                            .sort((a: any, b: any) => b[1] - a[1])
+                                            .map(([feature, score]: any, i: number) => (
+                                            <tr key={feature}>
+                                                <td><span className="tag">#{i + 1}</span></td>
+                                                <td style={{ fontWeight: i === 0 ? 700 : 400 }}>{feature}</td>
+                                                <td style={{ fontFamily: 'monospace', color: 'var(--accent-primary)' }}>{typeof score === 'number' ? score.toFixed(4) : score}</td>
                                             </tr>
                                         ))}
                                     </tbody>
