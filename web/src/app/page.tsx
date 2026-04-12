@@ -90,7 +90,7 @@ export default function Home() {
         const chunkSize = 5 * 1024 * 1024; // 5MB chunks
         const totalChunks = Math.ceil(file.size / chunkSize);
         const uploadId = crypto.randomUUID(); 
-        const pythonWorkerUrl = process.env.NEXT_PUBLIC_PYTHON_WORKER_URL || 'https://Zeo04-rate-worker.hf.space';
+        const pythonWorkerUrl = (process.env.NEXT_PUBLIC_PYTHON_WORKER_URL || 'https://Zeo04-rate-worker.hf.space').replace(/\/$/, '');
 
         try {
             setUploadProgress(0);
@@ -261,7 +261,7 @@ export default function Home() {
     };
 
     const resetPipeline = () => {
-        const pythonWorkerUrl = process.env.NEXT_PUBLIC_PYTHON_WORKER_URL || 'https://Zeo04-rate-worker.hf.space';
+        const pythonWorkerUrl = (process.env.NEXT_PUBLIC_PYTHON_WORKER_URL || 'https://Zeo04-rate-worker.hf.space').replace(/\/$/, '');
         fetch(`${pythonWorkerUrl}/datasets/purge-session`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify([]) }).catch(() => {});
         setLlmInsight(null); setCurrentFileIndex(0); setMultiDatasets([]); 
         setDatasetId(null); setRunId(null); setAvailableColumns([]);
