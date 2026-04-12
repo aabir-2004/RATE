@@ -61,7 +61,7 @@ export default function Home() {
                     },
                     scales: {
                         x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: 'var(--text-secondary)' }},
-                        y: { grid: { display: false }, ticks: { color: 'var(--text-primary)', font: { weight: 'bold' as any }}}
+                        y: { grid: { display: false }, ticks: { color: '#f8f9fa', font: { weight: 'bold' as any }}}
                     }
                 }
             });
@@ -278,13 +278,13 @@ export default function Home() {
                     R.A.T.E.
                 </div>
                 <ul className="nav-links">
-                    <li className={view === 'landing' ? 'active' : ''} onClick={() => setView('landing')}>◈ HOME</li>
-                    <li className={view === 'upload' ? 'active' : ''} onClick={() => setView('upload')}>⇪ PIPELINE</li>
-                    <li className={view === 'analysis' ? 'active' : ''} onClick={() => setView('analysis')}>📊 ANALYSIS</li>
+                    <li className={view === 'landing' ? 'active' : ''} onClick={() => setView('landing')}>HOME</li>
+                    <li className={view === 'upload' ? 'active' : ''} onClick={() => setView('upload')}>PIPELINE</li>
+                    <li className={view === 'analysis' ? 'active' : ''} onClick={() => setView('analysis')}>ANALYSIS</li>
                 </ul>
                 <div className="nav-actions">
                     <button className="theme-toggle" onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}>
-                        {theme === 'light' ? 'Dark ☾' : 'Light ☀'}
+                        {theme === 'light' ? 'Dark Mode' : 'Light Mode'}
                     </button>
                 </div>
             </nav>
@@ -312,7 +312,6 @@ export default function Home() {
                     {/* Architecture Feature Cards */}
                     <div className="dashboard-grid" style={{ marginTop: '40px' }}>
                         <div className="card glass col-span-1 feature-card">
-                            <div className="feature-icon">🧠</div>
                             <div className="card-title">LLM-as-Prior</div>
                             <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.6' }}>
                                 Groq Llama-3 analyzes metadata to propose targets & features. Its suggestions are injected 
@@ -320,7 +319,6 @@ export default function Home() {
                             </p>
                         </div>
                         <div className="card glass col-span-1 feature-card">
-                            <div className="feature-icon">🔬</div>
                             <div className="card-title">Deterministic Execution</div>
                             <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.6' }}>
                                 All ML computations are seeded (<code>random_state=42</code>). Same data in = same results out. 
@@ -328,7 +326,6 @@ export default function Home() {
                             </p>
                         </div>
                         <div className="card glass col-span-1 feature-card">
-                            <div className="feature-icon">🛡️</div>
                             <div className="card-title">Hallucination Gate</div>
                             <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.6' }}>
                                 A strict validation barrier cross-checks every LLM suggestion against actual CSV headers. 
@@ -336,7 +333,6 @@ export default function Home() {
                             </p>
                         </div>
                         <div className="card glass col-span-1 feature-card">
-                            <div className="feature-icon">📦</div>
                             <div className="card-title">Chunked Uploads</div>
                             <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.6' }}>
                                 Files are split into 5 MB chunks and streamed to the backend. Supports datasets up to <strong>100 MB</strong> 
@@ -344,7 +340,6 @@ export default function Home() {
                             </p>
                         </div>
                         <div className="card glass col-span-1 feature-card">
-                            <div className="feature-icon">⚡</div>
                             <div className="card-title">Redis Session Cache</div>
                             <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.6' }}>
                                 Duplicate analyses return instantly via Upstash Redis. Results are cached for 1 hour, 
@@ -352,7 +347,6 @@ export default function Home() {
                             </p>
                         </div>
                         <div className="card glass col-span-1 feature-card">
-                            <div className="feature-icon">♻️</div>
                             <div className="card-title">Disposable Architecture</div>
                             <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.6' }}>
                                 Zero permanent storage. Raw CSVs are <strong>auto-purged</strong> after analysis. 
@@ -378,7 +372,7 @@ export default function Home() {
                 <main className="main-container dashboard-grid">
                     {/* Left: Upload Panel */}
                     <div className="card glass col-span-1">
-                        <div className="card-title">⇪ Data Ingestion</div>
+                        <div className="card-title">Data Ingestion</div>
                         
                         {!llmInsight && (
                             <>
@@ -447,7 +441,7 @@ export default function Home() {
                     <div className="card glass col-span-2">
                         {!llmInsight ? (
                             <>
-                                <div className="card-title">📡 Pipeline Status</div>
+                                <div className="card-title">Pipeline Status</div>
                                 
                                 {/* Uploaded Datasets Summary */}
                                 {multiDatasets.length > 0 ? (
@@ -475,7 +469,7 @@ export default function Home() {
                                     </div>
                                 ) : (
                                     <div style={{ textAlign: 'center', padding: '50px 20px', color: 'var(--text-secondary)' }}>
-                                        <p style={{ fontSize: '2.5rem', marginBottom: '15px' }}>📂</p>
+                                        <p style={{ fontSize: '1.5rem', marginBottom: '15px', opacity: 0.3 }}>[ ]</p>
                                         <p>No datasets uploaded yet.</p>
                                         <p style={{ fontSize: '0.85rem', marginTop: '8px' }}>Upload your CSV files to begin the intelligence pipeline.</p>
                                     </div>
@@ -492,7 +486,7 @@ export default function Home() {
                         ) : (
                             /* LLM Recommendation Panel */
                             <div>
-                                <div className="card-title" style={{ marginBottom: '20px' }}>✨ Groq AI Recommendations</div>
+                                <div className="card-title" style={{ marginBottom: '20px' }}>Groq AI Recommendations</div>
                                 
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '20px' }}>
                                     <div style={{ padding: '20px', background: 'rgba(0,191,165,0.08)', borderRadius: '12px', border: '1px solid rgba(0,191,165,0.2)' }}>
@@ -521,7 +515,7 @@ export default function Home() {
                                 
                                 <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                                     <button className="btn-primary" onClick={() => triggerAssessment(undefined, true)}>
-                                        {isAnalyzing ? '⏳ Executing...' : '🚀 Execute with LLM Priors'}
+                                        {isAnalyzing ? 'Executing...' : 'Execute with LLM Priors'}
                                     </button>
                                     <button className="theme-toggle" onClick={resetPipeline}>↻ Start Fresh</button>
                                 </div>
@@ -536,7 +530,7 @@ export default function Home() {
                 <main className="main-container dashboard-grid">
                     {/* Manual Controls */}
                     <div className="card glass col-span-1">
-                        <div className="card-title">⚙ Manual Assessment</div>
+                        <div className="card-title">Manual Assessment</div>
                         <form onSubmit={triggerAssessment}>
                             <div className="form-group">
                                 <label>Target Variable</label>
@@ -562,7 +556,7 @@ export default function Home() {
                                 </select>
                             </div>
                             <button type="submit" className="btn-primary" style={{ width: '100%' }} disabled={isAnalyzing}>
-                                {isAnalyzing ? '⏳ Computing...' : 'Run Assessment'}
+                                {isAnalyzing ? 'Computing...' : 'Run Assessment'}
                             </button>
                         </form>
                         {analysisAlert && <div className={`alert ${analysisAlert.type}`} style={{marginTop: '15px'}}>{analysisAlert.msg}</div>}
