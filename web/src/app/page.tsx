@@ -188,7 +188,7 @@ export default function Home() {
     const triggerAssessment = async (e?: React.FormEvent, forceLLM: boolean = false) => {
         if (e) e.preventDefault();
         
-        let targetVar, features, method;
+        let targetVar: string = '', features: string[] = [], method: string = '';
 
         if (forceLLM && llmInsight) {
             targetVar = llmInsight.target;
