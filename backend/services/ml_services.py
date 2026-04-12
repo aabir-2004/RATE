@@ -24,12 +24,12 @@ def preprocess_dataset(df: pd.DataFrame, options: dict) -> tuple[pd.DataFrame, d
 
     # Encoding Categorical Variables
     if options.get("encode_categorical", True):
-        cat_cols = df.select_dtypes(include=['object', 'category']).columns
-        encoders = {}
+        # Select all columns that are NOT numeric (handles object, bool, datetime, etc)
+        cat_cols = df.select_dtypes(exclude=[np.number]).columns
         for col in cat_cols:
             le = LabelEncoder()
-            df[col] = pd.Series(le.fit_transform(df[col].astype(str)), index=df.index)
-            encoders[col] = "LabelEncoded"
+            # Convert to string to handle mixed types/NaNs before encoding
+            df[col] = le.fit_transform(df[col].astype(str))
         log["encoded_columns"] = list(cat_cols)
 
     # Normalization

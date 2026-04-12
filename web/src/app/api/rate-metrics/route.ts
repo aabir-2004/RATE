@@ -37,7 +37,7 @@ export async function POST(req: Request) {
     console.log('❌ Cache Miss. Routing to Python Worker...');
 
     // ── 2. ROUTE TO FASTAPI (PYTHON ML WORKER) ──────────────────────
-    const pythonWorkerUrl = (process.env.PYTHON_WORKER_URL || process.env.NEXT_PUBLIC_PYTHON_WORKER_URL || 'https://Zeo04-rate-worker.hf.space').replace(/\/$/, '');
+    const pythonWorkerUrl = (process.env.PYTHON_WORKER_URL || process.env.NEXT_PUBLIC_PYTHON_WORKER_URL || 'https://zeo04-rate-worker.hf.space').replace(/\/$/, '');
     
     // Step A: Run Preprocessing
     const preprocessRes = await fetch(`${pythonWorkerUrl}/preprocessing/`, {
