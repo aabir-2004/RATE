@@ -110,6 +110,7 @@ export default function Home() {
                 setUploadProgress(progress);
                 setUploadAlert({ msg: `Streaming chunk ${index + 1}/${totalChunks} (${(file.size / 1024 / 1024).toFixed(1)} MB)...`, type: 'alert-success' });
                 
+                console.log('DEBUG: Hitting Worker ->', `${pythonWorkerUrl}/datasets/upload_chunk`);
                 const res = await fetch(`${pythonWorkerUrl}/datasets/upload_chunk`, {
                     method: 'POST',
                     body: formData
