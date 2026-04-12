@@ -6,3 +6,4 @@ uploads/
 .git/
 rate_app.db
 docker_build.log
+dataset/sales.csv
