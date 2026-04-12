@@ -1,5 +1,14 @@
 
 
+---
+title: Rate Worker
+emoji: 🏎️
+colorFrom: orange
+colorTo: black
+sdk: docker
+app_port: 7860
+---
+
 # R.A.T.E — Reinforced Analytical Target Engine
 
 R.A.T.E is a deterministic system for automated feature selection and dataset evaluation. It integrates structured LLM outputs with statistical validation and reinforcement learning to produce reproducible and verifiable analytical results.
