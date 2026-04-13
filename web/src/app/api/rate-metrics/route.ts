@@ -127,18 +127,7 @@ export async function POST(req: Request) {
       console.warn('⚠️ Redis Cache Set Error:', redisError);
     }
 
-    // ── 5. PURGE RAW CSV FROM PYTHON SERVER ─────────────────────────
-    // The analysis is complete. The raw file is no longer needed.
-    // We fire-and-forget a cleanup request to keep the server ephemeral.
-    try {
-      fetch(`${pythonWorkerUrl}/datasets/purge-session`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify([datasetId])
-      }).catch(() => {}); // Fire-and-forget, don't block the response
-    } catch (_) {
-      // Purge failure is non-critical
-    }
+    console.log('🏁 Analysis complete. File retained for further session assessments.');
 
     return NextResponse.json({ 
       source: 'Python ML Worker (Freshly Computed)', 
