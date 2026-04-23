@@ -1,14 +1,3 @@
-
-
----
-title: Rate Worker
-emoji: 🏎️
-colorFrom: orange
-colorTo: black
-sdk: docker
-app_port: 7860
----
-
 # R.A.T.E — Reinforced Analytical Target Engine
 
 R.A.T.E is a deterministic system for automated feature selection and dataset evaluation. It integrates structured LLM outputs with statistical validation and reinforcement learning to produce reproducible and verifiable analytical results.
@@ -124,3 +113,4 @@ https://rate-theta-ruby.vercel.app/
 All rights reserved.
 
 Unauthorized copying, modification, distribution, or use of this software, in whole or in part, is strictly prohibited without prior written permission from the author.
+# R.A.T.E-
