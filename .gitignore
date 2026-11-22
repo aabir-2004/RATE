@@ -7,3 +7,14 @@ uploads/
 rate_app.db
 docker_build.log
 dataset/sales.csv
+# --- added by backup ---
+node_modules/
+.DS_Store
+__pycache__/
+*.pyc
+.env
+.env.*
+!.env.example
+.qodo/
+.claude/
+target/
